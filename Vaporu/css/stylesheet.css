@@ -123,6 +123,10 @@ select {
   padding: 1px 0px 0px 0px;
 }
 
+#panelVersion {
+  display: none;
+}
+
 #scaleToValue {
   display: inline-block;
   margin: 0 auto;
@@ -222,6 +226,10 @@ select {
   margin-top: 6px;
 }
 
+#updateNotification {
+  display: none;
+}
+
 #verticalThumbPixels {
   display: inline-block;
   margin: 0 auto;
@@ -261,6 +269,12 @@ select {
   color: white;
 }
 
+.fa-exclamation-circle {
+  font-size: 22px;
+  padding-left: 5px;
+  color: red;
+}
+
 .fa-fa-th {
   font-size: 16px;
   color: white;
@@ -283,6 +297,7 @@ select {
   margin: 0;
   padding: 4px 0px 0px 0px;;
 }
+
 
 .interfaceComponent {
   display: inline-block;
@@ -313,6 +328,11 @@ select {
   display: inline-block;
   max-width: 200px;
   text-align: center;
+}
+
+.tooltipStyle {
+  background-color: #424242 !important;
+  color: red !important;
 }
 
 .hrPadding {
