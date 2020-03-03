@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>InsiderTools</title>
+		<!-- jQuery UI css -->
+		<link rel="stylesheet" href="./lib/jquery-ui.min.css">
+		<!-- jQuery -->
+		<script type="text/javascript" src="./lib/jquery.min.js"></script>
+		<!-- jQuery UI-->
+		<script src="./lib/jquery-ui.min.js"></script>
+		<!-- Bootstrap-->
+		<script src="./lib/popper.min.js"></script>
+		<link rel="stylesheet" href="./lib/bootstrap.css">
+		<script src="./lib/bootstrap.min.js"></script>
+		<!-- Library to read in Excel/Sheets files -->
+		<script type="text/javascript" src="./lib/xlsx.full.min.js"></script>
+		<!-- My Style Sheet -->
+		<link href="./css/stylesheet.css" rel="stylesheet" type="text/css" />
+		<!-- My JavaScript functions -->
+		<script src="./lib/checkForUpdates.js"></script>
+		<script src="./lib/segmentExporter.js"></script>
+		<script src="./lib/foleyPads.js"></script>
+		<script src="./lib/scriptToTimeline.js"></script>
+		<script src="./lib/convertSRT.js"></script>
+		<script src="./lib/thumbnailExport.js"></script>
+		<script src="./lib/fitToSequence.js"></script>
+		<script src="./lib/MOGRTMaster.js"></script>
+		<script src="./lib/project_setup.js"></script>
+		<!-- Font Awesome, for graphics icons -->
+		<script src="./lib/fontawesome.js"></script>
+
+		<!-- Code to run JSX -->
+		<script src="./lib/CSInterface.js"></script>	
+
+		<script type="text/javascript">
+			// HERE IS WHERE THE EXTENDSCRIPT JSX CODE IS LAUNCHED
+			function runSegmentExporter() {
+				// get the user's selected audiotrack and then export using cuts on that track
+				var selectedAudioOption = $("#audioTrackOptions").val();
+				var selectedStartTileOption = $("#startTileOptions").val();
+				var selectedEndTileOption = $("#endTileOptions").val();
+				var selectedPresetOption = $("#exportPresetOptions").val();
+				var cs = new CSInterface;
+
+				// check argument parameters to ensure they make sense
+				if (!selectedAudioOption || selectedAudioOption < 1){
+					//alert("runnin");
+					var errMsg = JSON.stringify("No track info. Contact Adrian Traviezo for support! Exporting using Audio Track 2.");
+					cs.evalScript('$.runScript.premiereAlert(' + errMsg + ' )');
+					selectedAudioOption = 2;
+				}
+
+				if (!selectedStartTileOption || !selectedEndTileOption){
+					var errMsg = JSON.stringify("No start or end tile info. Contact Adrian Traviezo for support.");
+					cs.evalScript('$.runScript.premiereAlert(' + errMsg + ' )');
+				}
+				else if (parseInt(selectedEndTileOption) < parseInt(selectedStartTileOption)){
+					var errMsg = JSON.stringify("Your last tile comes before your first tile. Try selecting again.");
+					cs.evalScript('$.runScript.premiereAlert(' + errMsg + ' )');
+				}
+				else {		
+					cs.evalScript('$.runScript.segmentExporter(' + selectedAudioOption +', ' + 
+					selectedStartTileOption + ', ' + selectedEndTileOption + ', ' + JSON.stringify(selectedPresetOption) + ' )');
+				}
+			}
+		</script>
+
+	</head>
+	<body>
+		<div>
+			<img id="insider-logo" onClick="window.location.reload();" src="./images/insider-logo-transparent.png" width="120px">
+		</div>
+
+		<hr size="0.5" color="black">
+
+		<div class="row">
+			<div class="column">
+				<img id="segmentExporterButton" src="./images/segment_exporter.png">
+				<img id="srtImporterButton" src="./images/captions_converter.png">
+				<img id="thumbExportButton" src="./images/thumbnail_export.png">
+				<img id="projectSetupButton" src="./images/transcode.png">
+			</div>
+			<div class="column">
+				<img id="fitToSequenceButton" src="./images/fit_to_sequence.png">
+				<img id="reframeMOGRTButton" src="./images/mogrt_master.png">
+				<img id="scriptImporterButton" src="./images/script_importer.png">
+			</div>
+		  </div>
+		<hr size="0.5" color="black">
+
+		
+		<div id="segmentExporterControls">
+			<div id="landing" display="hidden"> 
+				<a href="#" data-toggle="exporterRefreshTooltip" title="Refresh"><i class="fas fa-sync-alt" id="exportRefreshButton"></i></a>
+				<select id="exportPresetOptions">
+					<option value="HQ">HQ</option>
+					<option value="FAST">Fast</option>
+				</select>
+				<a href="#" data-toggle="runExporterTooltip" title="Run Exporter" id="runExporterButton" onclick="runSegmentExporter()" ><i class="fas fa-play"></i></a>
+			</div>
+			<span class="interfaceComponent">
+				<div id="controls">
+					<span id="audioTrackSelect">
+							Audio Track:
+							<select id="audioTrackOptions" size="1">
+							</select>
+					</span>
+					<div>
+						<span class="tileSelect">
+							Export tiles
+							<select id="startTileOptions">
+							</select>
+						</span>
+						<span class="tileSelect">
+							through
+							<select id="endTileOptions">
+							</select>
+						</span>
+					</div>
+				</div>
+			</span>
+	
+			
+			<div id="infoModal" display="none">
+				<a id="clickForLink" href=#>Copy this link to the full manual.</a>
+				<textarea style="display: none;" id="manualLink" >https://drive.google.com/open?id=1dr7FOSrhx8Wp9wq1KQsevPXyvXQX63cPoNUyEMVLbXA&usp=gmail</textarea>
+				<div id="copiedConfirmation" style="display: none;">
+					Link copied!
+				</div>
+	
+				<div>
+					This sends each separated video in your sequence to Adobe Media Encoder. 
+					It exports using cuts on an Audio track that you choose. <br>
+					You can choose your Audio track and number of exports using Controls (<i class="fas fa-cog" style="font-size: 16px;"></i>). <br><br>
+		
+					For a Snapchat story that needs 7 different snaps, 
+					align 7 clips on Audio Track 2 to each video. <br><br>
+		
+					If you don't change the Controls,	
+					each video above Audio Track 2 will be exported.	<br>
+					So if you only want the last 3 videos split on Audio track 5,	
+					remember to change the setting!	<br>
+				</div>
+			</div>
+			<hr size="0.5" color="black">
+		</div>
+
+
+		<div id="gridModal">
+			<span class="interfaceComponent">
+				<div> 
+					<span class="grid-pad" data-padNum='1'></span><span class="grid-pad" data-padNum='2'></span><span class="grid-pad" data-padNum='3'></span>
+				</div>
+				<div>
+					<span class="grid-pad" data-padNum='4'></span><span class="grid-pad" data-padNum='5'></span><span class="grid-pad" data-padNum='6'></span>
+				</div>
+				<div>
+					<span class="grid-pad" data-padNum='7'></span><span class="grid-pad" data-padNum='8'></span><span class="grid-pad" data-padNum='9'></span>
+				</div>
+			</span>
+			<span class="interfaceComponent">
+				<a href="#" data-toggle="foleyRefreshTooltip" title="Refresh"><i class="fas fa-sync-alt" id="foleyRefreshButton"></i></a>
+
+				<a href="#" data-toggle="recordTooltip" title="Record"><i class="fas fa-circle"></i></a>
+
+				<span id="foleyAudioTrackSelect">
+					Track:
+					<select id="foleyAudioTrackOptions" size="1">
+					</select>
+				</span>
+
+				<div id="foleyBankSelect">
+					Bank:
+					<select id="foleyBankOptions" size="1">
+					</select>
+				</div>
+			</span>
+			<hr size="0.5" color="black">
+		</div>
+
+
+		<div id="srtImporterControls">
+			<div id="srtHolder">
+				<div id="srtDragBoxText">
+					Drag your SRT file into this gray box, or click
+					<input id="srtUploadInput" type="file"/>
+					<a href="" id="srtUploadLink">here</a>
+					to find it.
+				</div>
+				<i><td><ul id="srtFileList"></ul></td></i>
+				<a href="#"><i class="fas fa-times" id="srtFileUploaderReset"></i></a>
+			</div>
+			<div id="srtContents"></div>
+			<div>
+				<!--	<div class="interfaceComponent" id="importText">Import</div>
+					<div class="interfaceComponent"><input id="importCaptions" type="checkbox" name="importCaptions" value="import"></div>
+				-->
+				<div class="interfaceComponent"><input id="srtParser" type="submit" value="Export as SRT"></div>
+				<div class="interfaceComponent"><input id="srtToMOGRT" type="submit" value="Import as MOGRT"></div>
+				<div>
+					<div class="form-Text">Add warnings markers:</div>
+					<input id="addCaptionWarnings" class="form-Text" type="checkbox" name="addCaptionWarnings" value="addCaptionWarnings" checked>
+				</div>
+			</div>
+			<div>
+				<div class="form-Text">Selected MOGRT:</div>
+			</div>
+			<input id="MOGRTToSRT" type="submit" value="MOGRT to SRT">
+			<hr class="hrPadding" size="0.5" color="black">
+		</div>
+
+
+		<div id="thumbExportControls">
+			<form>
+				<span class=“thumbOptionsContainer”>
+					<div class="form-Text"> </div>
+					<input id="horizontalThumbPixels" type="text" name="horizontal" maxlength="4" value="540">
+					<div class="form-Text">x </div>
+					<input id="verticalThumbPixels" type="text" name="vertical" maxlength="4" value="900">
+				</span>
+
+				<span id="thumbExportDetails">
+						<div class="form-Text">Lock to:</div>
+						<select id="thumbAROptions">
+								<option value="WIDE">16:9</option>
+								<option value="SQUARE">1:1</option>
+								<option value="VERTICAL">9:16</option>
+						</select>
+						<input id="lockAR" class="form-Text" type="checkbox" name="lockAR" value="lockAR">
+				</span>
+			</form>
+
+			<input id="thumbExporter" type="submit" value="Export">
+			<hr class="hrPadding" size="0.5" color="black">
+		</div>
+
+
+		<div id="projectSetupControls">
+			<!--
+			<div class="form-Text">Sequences: </div>
+			<select id="initSequencesOptions">
+				<option value="Insider">Insider</option>
+				<option value="Insider">BI</option>
+				<option value="Insider">TI</option>
+			</select>
+			<input id="sequencesInitializeButton" type="submit" value="Initialize">
+			-->
+			<div>
+				<div class="form-Text">Transcode Clips:</div>
+			</div>
+		
+			<input class="interfaceComponent" id="convertSequenceContentsButton" type="submit" value="Convert">
+			<input class="interfaceComponent" id="replaceSequenceContentsButton" type="submit" value="Replace">
+			<hr class="hrPadding" size="0.5" color="black">
+		</div>
+
+
+		<div id="reframeClipsControls">
+			<span class="interfaceComponent">
+				<input id="reframeClipsButton" type="submit" value="Auto Scale">
+			</span>
+			<span>
+				<span class="interfaceComponent">Center:</span>
+				<span class="interfaceComponent"><input id="scaleCenterCheckbox" type="checkbox" name="Center" checked></span>
+			</span>
+				
+			<div>
+				<span class=“thumbOptionsContainer”>
+					<div class="form-Text"> </div>
+					<input class="interfaceComponent" id="scaleToButton" type="submit" value="Scale to:">
+					<input id="scaleToValue" type="text" name="vertical" maxlength="4" value="100">
+					<div class="form-Text">%</div>
+				</span>
+			</div>
+			<hr class="hrPadding" size="0.5" color="black">
+		</div>
+
+
+		<div id="reframeMOGRTControls">
+			<div>
+				<input id="reframeMOGRTJSXButton" type="submit" value="Auto Reframe">
+			</div>
+			<hr class="hrMini" size="0.5" color="#121212">
+			<div>
+				<span class="interfaceComponent">Properties:</span>
+				<span class="interfaceComponent"><input id="copyMOGRTPropertiesButton" type="submit" value="Copy"></span>
+				<span class="interfaceComponent"><input id="pasteMOGRTPropertiesButton" type="submit" value="Paste"></span>
+			</div>
+			<hr class="hrMini" size="0.5" color="#121212">
+			<div>
+				<div>
+					<div class="form-Text">Text to MOGRT:</div>
+				</div>
+				<span class="interfaceComponent">Type:</span>
+				<span class="interfaceComponent">
+					<select id="mogrtTypeOptions">
+						<option value="TOS">TOS</option>
+						<option value="Courtesy">Courtesy</option>
+					</select>
+				</span>
+				<span class="interfaceComponent"> Track:<select id="MOGRTTrackOptions"></select></span>
+			</div>
+			<span><input id="convertToMOGRTButton" type="submit" value="Convert"></span>
+		</div>
+
+
+		<div id="scriptImporterControls">
+			<div id="csvHolder">
+				<div id="csvDragBoxText">
+					Drag your XLSX file into this gray box, or click
+					<input id="csvUploadInput" type="file"/>
+					<a href="" id="csvUploadLink">here</a>
+					to find it.
+				</div>
+				<i><td><ul id="csvFileList"></ul></td></i>
+				<a href="#"><i class="fas fa-times" id="csvFileUploaderReset"></i></a>
+				<div id=scriptPreviewButtonHolder>
+					<input id="scriptPreviewButton" type="submit" value="Preview">
+				</div>
+			</div>
+			<div id="csvContents"></div>
+			<div class="padMe">
+				<span class=“checkboxContainer”>
+					<div class="checkBox-Text">Courtesies</div>
+					<div class="checkBox"><input id="mode2" type="checkbox" name="Courtesies" value="Courtesies"></div>
+					<div class="checkBox-Text">TOS</div>
+					<div class="checkBox"><input id="mode3" type="checkbox" name="TOS" value="TOS"></div>
+					<div><input id="csvParser" type="submit" value="Insert"></div>
+				</span>
+			</div>
+			<div>
+				<table id="scriptPreviewBox">
+					<tr id="previewTableHeader">
+						<th>File</th>
+						<th>In</th>
+						<th>Out</th>
+						<th>TOS</th>
+						<th>Courtesy</th>
+						<th>Bold</th>
+						<th>#</th>
+					</tr>
+				</table>
+			</div>
+			<hr class="hrPadding" size="0.5" color="black">
+		</div>
+		
+		<span id="hiddenText"></span>
+	</body>
+</html>
