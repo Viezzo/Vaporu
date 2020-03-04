@@ -21,7 +21,7 @@
 		<script src="./lib/checkForUpdates.js"></script>
 		<script src="./lib/segmentExporter.js"></script>
 		<script src="./lib/foleyPads.js"></script>
-		<script src="./lib/scriptToTimeline.js"></script>
+		<script src="./lib/scriptToTimeline_old.js"></script>
 		<script src="./lib/convertSRT.js"></script>
 		<script src="./lib/thumbnailExport.js"></script>
 		<script src="./lib/fitToSequence.js"></script>
@@ -69,16 +69,18 @@
 	</head>
 	<body>
 		<div>
-			<span>
+			<span class="interfaceComponent">
 				<img id="insider-logo" onClick="window.location.reload();" src="./images/insider-logo-transparent.png" width="120px">
 			</span>
 	
-			<span id="interfaceComponent">
-				<span id="updateNotification" data-toggle="updateTooltip" title="A new version of Vaporu is available in Self Service!"><i class="fas fa-exclamation-circle"></i></span>
+			<span class="interfaceComponent">
+				<div id="updateNotification"><i class="fas fa-exclamation-circle"></i></div>
 			</span>
 		</div>
 
 		<hr size="0.5" color="black">
+
+		<div id="updateWarning"></div>
 
 		<div class="row">
 			<div class="column">
@@ -126,29 +128,6 @@
 					</div>
 				</div>
 			</span>
-	
-			
-			<div id="infoModal" display="none">
-				<a id="clickForLink" href=#>Copy this link to the full manual.</a>
-				<textarea style="display: none;" id="manualLink" >https://drive.google.com/open?id=1dr7FOSrhx8Wp9wq1KQsevPXyvXQX63cPoNUyEMVLbXA&usp=gmail</textarea>
-				<div id="copiedConfirmation" style="display: none;">
-					Link copied!
-				</div>
-	
-				<div>
-					This sends each separated video in your sequence to Adobe Media Encoder. 
-					It exports using cuts on an Audio track that you choose. <br>
-					You can choose your Audio track and number of exports using Controls (<i class="fas fa-cog" style="font-size: 16px;"></i>). <br><br>
-		
-					For a Snapchat story that needs 7 different snaps, 
-					align 7 clips on Audio Track 2 to each video. <br><br>
-		
-					If you don't change the Controls,	
-					each video above Audio Track 2 will be exported.	<br>
-					So if you only want the last 3 videos split on Audio track 5,	
-					remember to change the setting!	<br>
-				</div>
-			</div>
 			<hr size="0.5" color="black">
 		</div>
 
@@ -314,7 +293,7 @@
 		<div id="scriptImporterControls">
 			<div id="csvHolder">
 				<div id="csvDragBoxText">
-					Drag your XLSX file into this gray box, or click
+					Drag your CSV file into this gray box, or click
 					<input id="csvUploadInput" type="file"/>
 					<a href="" id="csvUploadLink">here</a>
 					to find it.
@@ -353,5 +332,5 @@
 		
 		<span id="hiddenText"></span>
 	</body>
-	<div id="panelVersion">2.04</vid>
+	<div id="panelVersion">2.05</vid>
 </html>

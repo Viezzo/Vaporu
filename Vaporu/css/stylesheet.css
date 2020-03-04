@@ -226,6 +226,11 @@ select {
   margin-top: 6px;
 }
 
+#updateWarning {
+  font-size: 12px;
+  display: none;
+}
+
 #updateNotification {
   display: none;
 }
@@ -270,9 +275,8 @@ select {
 }
 
 .fa-exclamation-circle {
-  font-size: 22px;
-  padding-left: 5px;
-  color: red;
+  font-size: 17px;
+  color: #ff4000;
 }
 
 .fa-fa-th {
@@ -328,11 +332,6 @@ select {
   display: inline-block;
   max-width: 200px;
   text-align: center;
-}
-
-.tooltipStyle {
-  background-color: #424242 !important;
-  color: red !important;
 }
 
 .hrPadding {
