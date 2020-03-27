@@ -54,6 +54,511 @@ $.runScript = {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
+	generateProjectReport: function() {
+		var mainSeq = app.project.activeSequence;
+		var finalString = "";
+
+		var infoArray = ["Filetype | Codec | Framerate | Resolution (PAR)"];
+		var countArray = ["Number | "];
+
+		for (i = 0; i < mainSeq.videoTracks.numTracks; i++){
+			thisTrack = mainSeq.videoTracks[i];
+			for (j = 0; j < thisTrack.clips.numItems; j++){
+				thisClip = thisTrack.clips[j].projectItem;
+				var thisInfo = "";
+
+				if (thisClip && typeof thisClip != "undefined"){
+					var clipFilename;
+					var clipCodec;
+					var resolutionAndPar;
+					var framerate;
+					if (app.isDocumentOpen()) {
+						if (ExternalObject.AdobeXMPScript == undefined) {
+							ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+						}
+						if (ExternalObject.AdobeXMPScript != undefined) {
+							var projectMetadata = thisClip.getProjectMetadata();
+							var xmp = new XMPMeta(projectMetadata);
+							clipFilename = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.FileName");
+							clipCodec = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.PropertyText.Codec");
+							resolutionAndPar = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoInfo");
+							framerate = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaTimebase");
+						}
+					}
+					var fileType = " ?";
+					if (typeof clipFilename != "undefined"){
+						// parse filename for filetype
+						var lastIndex = clipFilename.value.lastIndexOf(".");
+						var filetype = (clipFilename.value.substr(lastIndex + 1)).replace(/\s/g, '');
+					}
+					// ADD THE VALUES IF THEY ARE VALID
+					thisInfo += filetype + " | "; 
+					thisInfo += typeof clipCodec.value != "undefined" ? (clipCodec.value + " | ") : " ? | "; 
+					thisInfo += typeof resolutionAndPar != "undefined" ? (resolutionAndPar + " | ") : " ? | "; 
+					thisInfo += typeof framerate != "undefined" ? (framerate + " | ") : " ? | "; 
+
+					var theIndex = infoArray.indexOf(thisInfo);
+					if (theIndex > -1){ //IF WE ALREADY SET THIS KEY, GET THE COUNT AND INCREASE IT
+						var theCount = countArray[theIndex];
+						theCount++;
+						countArray[theIndex] = theCount;
+					}
+					else {// FIRST TIME SETTING.
+						infoArray.push(thisInfo);
+						countArray.push(1);
+					} 
+				}
+			}
+		}
+		
+		for (i = 0; i < infoArray.length; i++)
+			finalString += countArray[i] + "	" + infoArray[i] + "\r\n";
+		alert(finalString);
+		finalString = "There are " + "2" + "clip"
+		// $.runScript.saveFile("projectReport", finalString, "txt", "NULL")
+	},
+
+	saveFile: function (filename, text, extension, folder) {
+		alert("in savefile")
+		var finalOutputPath = "NULL";
+		var outputPath = folder;
+		if (folder == "NULL")
+			outputPath = Folder.selectDialog("Choose the output directory.");
+		if (outputPath && typeof outputPath != "undefined"){
+			var outputFileName = outputPath.fsName + "/" + filename + '_from_Vaporu.' + extension.toLowerCase();
+
+			var outFile = new File(outputFileName);
+			if (outFile) {
+				outFile.open("w");
+				outFile.encoding = "UTF-8";
+				outFile.writeln(text);
+
+				if (outFile){
+					finalOutputPath = outputFileName;
+					outFile.close();
+				}
+				else {
+					alert("Error: file could not be saved.");
+				}
+			}
+		}
+		return outFile;
+	},
+
+	relinkSelectedFiles: function(isProxy){
+		var mainSeq = app.project.activeSequence;
+		var errorArray = [];
+		var selection = mainSeq.getSelection();
+		if (selection.length == 0) {
+			alert("No clips are selected for replacement.")
+		}
+		var replacementPath = Folder.selectDialog("Choose the folder your transcodes are in.");
+		if (replacementPath && replacementPath != "undefined"){
+			// to ensure that we don't repeatedly replace clips with the same projectItem
+			var replaceIDs = [];
+			// go through each media to replace, then replace it.
+			for (var i = 0; i < selection.length; i ++) {
+				//ensure that we're selecting a video
+				var clipItem = selection[i].projectItem;
+				if (typeof clipItem != "undefined" && selection[i].mediaType == "Video"){
+					if (replaceIDs.indexOf(clipItem.nodeId) == -1){
+						//ensure the projectItem can be changed
+						if (clipItem.canChangeMediaPath()){
+							var logNote;
+							if (app.isDocumentOpen()) {
+								if (ExternalObject.AdobeXMPScript == undefined) {
+									ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+								}
+								if (ExternalObject.AdobeXMPScript != undefined) {
+									var projectMetadata = clipItem.getProjectMetadata();
+									var xmp = new XMPMeta(projectMetadata);
+									logNote = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.LogNote");
+								}
+							}
+							// if the new and old durations don't match, replace new clip with the old one again
+							if (typeof logNote != "undefined"){
+								// parse log note to find the recordID
+								var recordIDsplit = logNote.value.split('"recordId":"');
+								if(recordIDsplit.length == 2){
+									var recordIDsplit2 = recordIDsplit[1].split('-')
+									if(recordIDsplit2.length == 2){
+										// found the RecordID
+										var theRecordID = recordIDsplit2[0];
+										var suffix = isProxy == true ? "r2" : "f0";
+										var extension = isProxy == true ? "mp4" : "*";
+										var fileName = "businessinsider_" + theRecordID + "_" + suffix + "." + extension;
+
+										// create the fullReplacementPath variable, but modify it if this isn't a proxy.
+										var fullReplacementPath = replacementPath.fsName + '/' + fileName;
+										if (isProxy == false) {
+											var resultFileArray = replacementPath.getFiles(fileName);
+											if (typeof resultFileArray == "object" && resultFileArray.length == 1){
+												var foundFile = resultFileArray[0];
+												fullReplacementPath = foundFile.fsName;
+											}
+										}
+										var errorMessage = (fullReplacementPath + " is not in your chosen directory.");
+										if (File(fullReplacementPath).exists){
+											var originalMediaPath = clipItem.getMediaPath();
+											// replace the clip with version in transcodes folder, then check its duration
+											var replaceSuccess = clipItem.changeMediaPath(fullReplacementPath, true);
+											// changemediapath() returns 1 if successful, which is inconsistent with the documentation
+											if (replaceSuccess && replaceSuccess != "undefined")
+												replaceIDs.push(clipItem.nodeId);
+											else 
+												errorArray.push([selection[i].start.seconds, errorMessage]);
+											// whether or not the projectItem was changed, refresh the projectItem
+											clipItem.refreshMedia();
+										}
+										else 
+											errorArray.push([selection[i].start.seconds, errorMessage]);
+									}
+									else {
+										errorMessage = "Could not parse log note for " + selection[i].name + ".";
+										errorArray.push([selection[i].start.seconds, errorMessage]);
+									}
+								}
+								else {
+									errorMessage = "Could not parse log note for " + selection[i].name + ".";
+									errorArray.push([selection[i].start.seconds, errorMessage]);
+								}
+							}
+							else {
+								errorMessage = "No log note is set for " + selection[i].name + ". It probably wasn't imported using the Xchange Panel.";
+								errorArray.push([selection[i].start.seconds, errorMessage]);
+							}
+						}
+						else {
+							errorMessage = "Can't change media path for " + selection[i].name + ".";
+							errorArray.push([selection[i].start.seconds, errorMessage]);
+						}
+					}
+				}
+			}
+			if (replaceIDs.length == 1){
+				var alertMessage = isProxy == true ? "proxy." : "original version."
+				alert("1 file replaced with its " + alertMessage)
+			}
+			else {
+				var alertMessage = isProxy == true ? "proxies." : "original versions."
+				alert(replaceIDs.length + " files replaced their " + alertMessage)
+			}
+		}
+		for (i = 0; i < errorArray.length; i++){
+			// add new marker or append its comments to the previous one if it's also at time = 0, to avoid stacking markers
+			var newMarker;
+			var markerComments = "";
+			// if there's a previous marker, and if it's at time = 0, set selected marker to that one
+			var insertionTime = 0;
+			if (mainSeq.markers.numMarkers > 0 && mainSeq.markers.getLastMarker().end.seconds == errorArray[i][0]){
+				newMarker = mainSeq.markers.getLastMarker();
+				markerComments = newMarker.comments;
+			}
+			// otherwise, create a new one
+			else { 
+				newMarker = mainSeq.markers.createMarker(errorArray[i][0]);
+			}
+			newMarker.name = "Vaporu: Replace Clip Alert";
+			// add all comments to marker's previous comments
+			markerComments += errorArray[i][1];
+			newMarker.comments = markerComments;
+			newMarker.type = "Chapter";
+		}
+	},
+
+	createCustomMetadata: function (name, label, type) {
+		var customMetadataSuccess = false;
+		if (app.isDocumentOpen()) {
+			var projectItem = app.project.rootItem.children[0];
+			if (projectItem) {
+				if (ExternalObject.AdobeXMPScript === undefined) {
+					ExternalObject.AdobeXMPScript = new ExternalObject('lib:AdobeXMPScript');
+				}
+				if (ExternalObject.AdobeXMPScript !== undefined) { // safety-conscious!
+					var projectMetadata = projectItem.getProjectMetadata();
+					var xmp	= new XMPMeta(projectMetadata);
+					var propertyExists = xmp.doesPropertyExist("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", label);
+					// if the new property wasn't added before, add it.
+					if (!propertyExists){
+						var successfullyAdded = app.project.addPropertyToProjectMetadataSchema(name, label, type);
+						var xmp	= new XMPMeta(projectMetadata);
+						// check the schema again to see if it's now there
+						if (successfullyAdded){
+							var testLabel = $.runScript.setMetadataValue(projectItem, name, " ");
+							propertyExists = testLabel == true ? true: false;
+						}
+					}
+					if (propertyExists)
+						customMetadataSuccess = true;
+				}
+			}
+		}
+		return customMetadataSuccess;
+	},
+
+	getMetadataValue: function (obj, metadataLabel){
+		var resultData;
+		if (app.isDocumentOpen()) {
+			if (ExternalObject.AdobeXMPScript == undefined) {
+				ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+			}
+			if (ExternalObject.AdobeXMPScript != undefined) {
+				var projectMetadata = obj.getProjectMetadata();
+				var xmp = new XMPMeta(projectMetadata);
+				resultData = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", metadataLabel));
+			}
+		}
+		return resultData;
+	},
+
+	setMetadataValue: function (obj, metadataLabel, newValue){
+		var setSuccess = false;
+		if (app.isDocumentOpen()) {
+			if (ExternalObject.AdobeXMPScript == undefined) {
+				ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+			}
+			if (ExternalObject.AdobeXMPScript != undefined) {
+				var projectMetadata = obj.getProjectMetadata();
+				var xmp = new XMPMeta(projectMetadata);
+				xmp.setProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", metadataLabel, newValue);
+				var str = xmp.serialize();
+				var setPropertyFailed = obj.setProjectMetadata(xmp.serialize(), [metadataLabel]);
+				if (!setPropertyFailed)
+					setSuccess = true;
+			}
+		}
+		return setSuccess;
+	},
+
+	renameSelectedFiles: function(renameClipsOnly, renameBy, csvInput){
+		// first, create custom metadata field to attach rename info to
+		clipNameCCreated = $.runScript.createCustomMetadata("RenameClip", "RenameClip", 2);
+		ridNameCreated = $.runScript.createCustomMetadata("RenameRid", "RenameRid", 2);
+		OGFileNameCreated = $.runScript.createCustomMetadata("RenameFileOriginal", "RenameFileOriginal", 2);
+		OGClipNameCreated = $.runScript.createCustomMetadata("RenameClipOriginal", "RenameClipOriginal", 2);
+
+		if (!clipNameCCreated || !ridNameCreated || !OGFileNameCreated || !OGClipNameCreated){ // if creating the metadata failed, immediately stop this function. Won't happen if it was already created
+			alert("Could not initialize renaming function.")
+			return 0;
+		}
+		var mainSeq = app.project.activeSequence;
+		var errorArray = [];
+		var selection = mainSeq.getSelection();
+		if (selection.length == 0) {
+			alert("No clips are selected for replacement.")
+		}
+		else { // to ensure that we don't repeatedly replace clips with the same projectItem
+			var replaceIDs = [];
+			// parse the CSV for info on this project
+			var ridArray = [];
+			var nameArray = [];
+			if (renameBy == 1 || renameBy == 2){
+				var csvArray = csvInput.split("\n");
+				for (line in csvArray) {
+					var entry = csvArray[line].toString();
+					var firstIndex = entry.indexOf(",");
+					var recordID = entry.substr(0, firstIndex - 2);
+					var name = entry.substr(firstIndex + 2);
+					ridArray.push(recordID);
+					nameArray.push(name);
+				}
+			}
+			var confirmedVideos = 0;
+			var sameFileNames = 0;
+			var sameFileNamesText = "";
+			for (i = 0; i < selection.length; i++) { // go through each media to replace, then replace it.
+				var clipItem = selection[i].projectItem;				
+				if (typeof clipItem != "undefined" && selection[i].mediaType == "Video"){ //ensure that we're selecting a video
+					confirmedVideos++;
+					if (replaceIDs.indexOf(clipItem.nodeId) == -1){
+						//ensure the projectItem can be changed
+						if (clipItem.canChangeMediaPath()){
+							var originalMediaPath = clipItem.getMediaPath();
+							var lastIndex = originalMediaPath.lastIndexOf(".");
+							var extension = (originalMediaPath.substr(lastIndex + 1)).replace(/\s/g, '');
+							var theFile = File(originalMediaPath);
+							if (theFile.exists){ // THE FILE IS VALID TO BE RENAMED
+								var newFilename;
+								var folderName = theFile.parent.name;
+								// SET THE OG NAMES IF THEY AREN'T THERE ALREADY
+								var OGClipValue;
+								var OGFileValue;
+								if (app.isDocumentOpen()) {
+									if (ExternalObject.AdobeXMPScript == undefined) {
+										ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+									}
+									if (ExternalObject.AdobeXMPScript != undefined) {
+										var projectMetadata = clipItem.getProjectMetadata();
+										var xmp = new XMPMeta(projectMetadata);
+										OGClipValue = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "RenameClipOriginal"));
+										OGFileValue = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "RenameFileOriginal"));
+									}
+								}
+								var setOGnames = typeof OGClipValue != "undefined" && typeof OGClipValue != "undefined" ? true: false; // IF VALID VALUES RETURNED, 
+								if (typeof OGClipValue == "undefined")
+									setOGnames = $.runScript.setMetadataValue(clipItem, "RenameClipOriginal", clipItem.name);
+								if (typeof OGClipValue == "undefined")
+									setOGnames = $.runScript.setMetadataValue(clipItem, "RenameFileOriginal", theFile.name);
+								if (!setOGnames)
+									errorArray.push([selection[i].start.seconds, "Couldn't add original name metadata."]);
+								// NOW, READ AND PARSE THE NEW NAME 
+								if (renameBy == 3) // RENAMING BY FOLDER
+									newFilename = folderName + "-" + clipItem.nodeId + "." + extension;
+								if (renameBy == 4)  // SET NAME TO ORIGINAL
+									newFilename = renameClipsOnly == 1 ? OGClipValue : OGFileValue;
+								if (renameBy < 3) { // CSV UPLOADED. Parse the metadata first
+									var alreadySetMetadata = false;
+									var clipValue = $.runScript.getMetadataValue(clipItem, "RenameClip");
+									var ridValue = $.runScript.getMetadataValue(clipItem, "RenameRid");
+									if (typeof clipValue != "undefined" && typeof ridValue != "undefined"){
+										alreadySetMetadata = true;
+									}
+									else { // set the rename metadata for the first time
+										if (ridArray.length > 0 && nameArray.length == ridArray.length){ // make sure we have the same amount of recordIDs and names to pull from
+											var index = -1;
+											var isFromRidName = false;
+											var isFromClipName = false;
+											// TASK 1: FIND THE RIDNAME OR THE CLIP NAME IN THE CSV
+											var nameSplit1 = theFile.name.split("businessinsider_");
+											// try checking if the original name is a recordID
+											if (nameSplit1.length == 2){
+												nameSplit2 = nameSplit1[1].split("_");
+												if (nameSplit2.length == 2){
+													isFromRidName = true;
+													for (ridEntry in ridArray){
+														if (ridArray[ridEntry] == nameSplit2[0]){
+															index = ridEntry;
+															break;
+														}
+													}
+													if (index == -1) //matches ridname format, but wasn't found here
+														errorArray.push([selection[i].start.seconds, "That record ID is not in this project CSV."]);						
+												}
+											}
+											// the original name is not from a recordID. Try finding by clip name in the CSV
+											if (isFromRidName == false) {
+												for (nameEntry in nameArray){
+													if (nameArray[nameEntry] == thisRid){
+														index = nameEntry
+														isFromClipName == true;
+														break;
+													}
+												}
+												if (index == -1) //matches ridname format, but wasn't found here
+													errorArray.push([selection[i].start.seconds, "That clip name is not in this project CSV."]);
+											}
+											if (isFromRidName || isFromClipName){ // the clip was located in the CSV
+												clipValue = nameArray[index] + "." + extension;
+												$.runScript.setMetadataValue(clipItem, "RenameClip", clipValue);
+												ridValue = "businessinsider_" + ridArray[index] + "_f0." + extension;
+												$.runScript.setMetadataValue(clipItem, "RenameRid", ridValue);
+												alreadySetMetadata = true;
+											}
+										}
+										else
+											errorArray.push([selection[i].start.seconds, "Error reading the project CSV."]);
+									}
+									if (alreadySetMetadata){ // at this point, metadata should be set.
+										newFilename = renameBy == 1? clipValue: ridValue;
+									}
+								}
+								if (renameClipsOnly){ // user is renaming clip in Premiere, not the actual file
+									if (typeof newFilename != "undefined"){ // if new name set, rename clip in the bin AND on the timeline
+										clipItem.name = newFilename;
+										selection[i].name = newFilename;
+										replaceIDs.push(clipItem.nodeId);
+									}
+									else
+										errorArray.push([selection[i].start.seconds, "Couldn't parse filename for " + fullReplacementPath + "."]);
+								}
+								else if (theFile.name != newFilename) { // ONLY RENAME IF THE NEW NAME ISN'T THE SAME AS CURRENT FILE NAME
+									//rename file. temporarily link to a tiny mp4 included in the Vaporu directory, so that clips aren't registered by Premiere as offline
+									var tempFile = File("/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/tempMP4.mp4");
+									if (tempFile.exists){
+										if (typeof newFilename != "undefined"){
+											if (!File(newFilename).exists){ // if a file with the new filename already exists, renaming will fail
+												clipItem.changeMediaPath(tempFile.fsName, true);
+												var renameWorked = theFile.rename(newFilename)
+												if (renameWorked){ // renaming file is successful
+													var fullReplacementPath = theFile.fsName;
+													errorMessage = (fullReplacementPath + " is not in your chosen directory.");
+													if (File(fullReplacementPath).exists){
+														// replace the clip with version in transcodes folder
+														var replaceSuccess = clipItem.changeMediaPath(fullReplacementPath, true);
+														// changemediapath() returns 1 if successful, which is inconsistent with the documentation
+														if (typeof replaceSuccess != "undefined" && replaceSuccess){
+															selection[i].name = newFilename;
+															replaceIDs.push(clipItem.nodeId);
+														}
+														else {
+															File(fullReplacementPath).rename(originalMediaPath, true); //  don't keep the link to the temp mp4 file
+															errorArray.push([selection[i].start.seconds, "Failed to change the path."]);
+														}
+													}
+													else   // couldn't link to new file, most likely filename was parsed wrong.
+														errorArray.push([selection[i].start.seconds, fullReplacementPath + " is not in your chosen directory."]);
+												}
+												else {
+													clipItem.changeMediaPath(originalMediaPath, true); // don't keep the link to the temp mp4 file
+													errorArray.push([selection[i].start.seconds, "Renaming function failed"]);
+												}
+											}
+											else 
+												errorArray.push([selection[i].start.seconds, "A file with the name " + newFilename + " already exists, so it wasn't renamed."]);
+										}
+										else
+											errorArray.push([selection[i].start.seconds, "Couldn't create new filename for " + fullReplacementPath + "."]);
+									}
+									else
+										errorArray.push([selection[i].start.seconds, "Temp MP4 file doesn't exist."]);
+								} 
+								else // NEW FILE HAD THE SAME NAME AS THE ORIGINAL. 
+									sameFileNames++;
+							}
+							else 
+								errorArray.push([selection[i].start.seconds, "The original file did not exist."]);
+							clipItem.refreshMedia(); // refresh the clipItem, whether or not it was replaced
+						}
+						else 
+							errorArray.push([selection[i].start.seconds, "Can't change media path for " + selection[i].name + "."]);
+					}
+					else
+						errorArray.push([selection[i].start.seconds, "This clip has already been replaced this time around."]);
+				}
+			}
+			var clipOrFileMessage = renameClipsOnly == true? "clip" : "file";
+			if (sameFileNames > 0)
+				sameFileNamesText = " " + sameFileNames + " files already had the correct final name.";
+			if (replaceIDs.length == 1)
+				alert("1 of " + confirmedVideos + " " + clipOrFileMessage + " renamed." + sameFileNamesText);
+			else 
+				alert(replaceIDs.length + " of " + confirmedVideos + " " + clipOrFileMessage + "s renamed." + sameFileNamesText);
+			// ADD ERROR MARKERS TO TIMELINE
+			for (i = 0; i < errorArray.length; i++){
+				// add new marker or append its comments to the previous one if it's also at time = 0, to avoid stacking markers
+				var newMarker;
+				var markerComments = "";
+				// if there's a previous marker, and if it's at time = 0, set selected marker to that one
+				var insertionTime = 0;
+				if (mainSeq.markers.numMarkers > 0 && mainSeq.markers.getLastMarker().end.seconds == errorArray[i][0]){
+					newMarker = mainSeq.markers.getLastMarker();
+					markerComments = newMarker.comments;
+				}
+				// otherwise, create a new one
+				else { 
+					newMarker = mainSeq.markers.createMarker(errorArray[i][0]);
+				}
+				newMarker.name = "Vaporu: Replace Clip Alert";
+				// add all comments to marker's previous comments
+				markerComments += errorArray[i][1];
+				newMarker.comments = markerComments;
+				newMarker.type = "Chapter";
+			}
+		}
+	},
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------
+
 	thumbExport: function (hPixels, vPixels) {
 		app.enableQE();
 

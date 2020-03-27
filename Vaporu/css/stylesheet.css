@@ -47,13 +47,26 @@ select {
   display: inline;
 }
 
-#csvHolder {
+#csvHolder{
   background-color: #bdbdbd;
   border: 3px solid rgba(0, 0, 0, 0.8);
   border-radius: 10px;
   box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
   color: black;
   display: block;
+  margin: 0 auto;
+  text-align: center;
+  max-width: 200px;
+  width: 50vw;
+}
+
+#renameCsvHolder {
+  background-color: #bdbdbd;
+  border: 3px solid rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+  color: black;
+  display: none;
   margin: 0 auto;
   text-align: center;
   max-width: 200px;
@@ -73,7 +86,7 @@ select {
   width: 50vw;
 }
 
-#csvContents {
+#csvContents, #renameCsvContents {
   display: none;
 }
 
@@ -81,7 +94,7 @@ select {
   display: none;
 }
 
-#csvFileList {
+#csvFileList, #renameCsvFileList {
   display: none;
 }
 
@@ -89,7 +102,7 @@ select {
   display: none;
 }
 
-#csvFileUploaderReset {
+#csvFileUploaderReset, #renameCsvFileUploaderReset {
   padding: 7px;
   display: none;
 }
@@ -172,7 +185,7 @@ select {
   display: none;
 }
 
-#csvUploadInput {
+#csvUploadInput, #renameCsvUploadInput {
   display: none;
 }
 
@@ -180,7 +193,7 @@ select {
   display: none;
 }
 
-#csvUploadLink {
+#csvUploadLink, #renameCsvUploadLink {
   color: blue;
 }
 
@@ -206,6 +219,10 @@ select {
 
 #MOGRTTrackOptions{
   max-width: 42px;
+}
+
+#projectToolsControls{
+  display: none;
 }
 
 #thumbExportControls {

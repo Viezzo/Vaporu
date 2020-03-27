@@ -26,7 +26,7 @@
 		<script src="./lib/thumbnailExport.js"></script>
 		<script src="./lib/fitToSequence.js"></script>
 		<script src="./lib/MOGRTMaster.js"></script>
-		<script src="./lib/project_setup.js"></script>
+		<script src="./lib/project_tools.js"></script>
 		<!-- Font Awesome, for graphics icons -->
 		<script src="./lib/fontawesome.js"></script>
 
@@ -93,6 +93,8 @@
 				<img id="fitToSequenceButton" src="./images/fit_to_sequence.png">
 				<img id="reframeMOGRTButton" src="./images/mogrt_master.png">
 				<img id="scriptImporterButton" src="./images/script_importer.png">
+				<img id="projectToolsButton" src="./images/project_tools.png">
+				
 			</div>
 		  </div>
 		<hr size="0.5" color="black">
@@ -331,6 +333,62 @@
 		</div>
 		
 		<span id="hiddenText"></span>
+
+
+		<div id ="projectToolsControls">
+			<!--
+			<input id="generateReportButton" type="submit" value="Generate Report"> 
+			<div>
+				<span class="interfaceComponent">
+					<input id="relinkFilesButton" type="submit" value="Relink with:">
+				</span>
+				<span class="interfaceComponent">
+					<select id="replaceProxyOptions">
+						<option value="1">Originals</option>
+						<option value="2">Proxies</option>
+					</select>
+				</span>
+			</div>
+		-->
+			
+			<div>
+				<span class="interfaceComponent">
+					<input id="renameFilesButton" type="submit" value="Rename">
+				</span>
+				<span class="interfaceComponent">
+					<select id="renameFilesOrClips">
+						<option value="1">Clips</option>
+						<option value="2">Files</option>
+					</select>
+				</span>
+				<span class="interfaceComponent">
+					to:
+				</span>
+				<span class="interfaceComponent">
+					<select id="renameByOptions">
+						<option value="4">Originals</option>
+						<option value="1">Clip Name</option>
+						<option value="2">MAM Name</option>
+						<option value="3">Folder</option>
+					</select>
+				</span>
+			</div>
+			
+			<div id="renameCsvHolder">
+				<div id="renameCsvDragBoxText">
+					Drag your CSV file into this gray box, or click
+					<input id="renameCsvUploadInput" type="file"/>
+					<a href="" id="renameCsvUploadLink">here</a>
+					to find it.
+				</div>
+				<i><td><ul id="renameCsvFileList"></ul></td></i>
+				<a href="#"><i class="fas fa-times" id="renameCsvFileUploaderReset"></i></a>
+			</div>
+			<div id="renameCsvContents"></div>
+
+			<hr class="hrPadding" size="0.5" color="black">
+		</div>
+		
 	</body>
-	<div id="panelVersion">2.05</vid>
+	<div id="panelVersion">2.06</vid>
 </html>
