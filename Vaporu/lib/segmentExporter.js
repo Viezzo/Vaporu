@@ -166,18 +166,18 @@ $(document).ready(function() {
 
   $(".fa-info-circle").hover(function () {
     $(this).animate({color: "#1cf4ff"});
-    $("#infotooltip").css("visibility", "visible");
+    //$("#infotooltip").css("visibility", "visible");
   }, function(){
     $(this).animate({color:  "white"});
-    $("#infotooltip").css("visibility", "hidden");
+    //$("#infotooltip").css("visibility", "hidden");
   });
 
   $(".fa-cog").hover(function () {
     $(this).animate({color: "#1cff73"});
-    $("#controlstooltip").css("visibility", "visible");
+    //$("#controlstooltip").css("visibility", "visible");
   }, function(){
     $(this).animate({color: "white"});
-    $("#controlstooltip").css("visibility", "hidden");
+    //$("#controlstooltip").css("visibility", "hidden");
   });
 
   $('[data-toggle="infoTooltip"]').tooltip({
@@ -207,30 +207,30 @@ $(document).ready(function() {
     $(this).animate({color: "white"});
   });
 
-  $('[data-toggle="exporterRefreshTooltip"]').tooltip({
-      trigger : 'hover'
-  });
+  // $('[data-toggle="exporterRefreshTooltip"]').tooltip({
+  //     trigger : 'hover'
+  // });
   $("#exportRefreshButton").hover(function () {
       $(this).animate({color: "#1cff73"});
-      $("#exporterRefreshTooltip").css("visibility", "visible");
+      //$("#exporterRefreshTooltip").css("visibility", "visible");
   }, function(){
       $(this).animate({color:  "white"});
-      $("#exporterRefreshTooltip").css("visibility", "hidden");
+      //$("#exporterRefreshTooltip").css("visibility", "hidden");
   });
   $("#exportRefreshButton").click(function () {
       $("#audioTrackOptions").replaceWith(emptyAudioTrackList.clone());
       setAudioTrackOptions();
   });
 
-  $('[data-toggle="runExporterTooltip"]').tooltip({
-    trigger : 'hover'
-  });
+  // $('[data-toggle="runExporterTooltip"]').tooltip({
+  //   trigger : 'hover'
+  // });
   $("#runExporterButton").hover(function () {
       $(this).animate({color: "#ff0000"});
-      $("#runExporterTooltip").css("visibility", "visible");
+      //$("#runExporterTooltip").css("visibility", "visible");
   }, function(){
       $(this).animate({color:  "white"});
-      $("#runExporterTooltip").css("visibility", "hidden");
+      //$("#runExporterTooltip").css("visibility", "hidden");
   });
 
   $("#segmentExporterButton").click(function(){

@@ -1,4 +1,5 @@
 $(document).ready(function() {
+    setVideoTrackOptions();
 
     $("#MOGRTToSRT").click(function(){
         
@@ -16,7 +17,8 @@ $(document).ready(function() {
             var startTimecodesArray = textAndTimecodes[1];
             var endTimecodesArray = textAndTimecodes[2];
             var widthArray = textAndTimecodes[3];
-
+            var trackNumber = $("#importSRTasMOGRTTrackOptions").val();
+            
             var cs = new CSInterface;	
             cs.evalScript('$.runScript.convertCaptionsToMOGRT('
                 + JSON.stringify(textArrray)
@@ -24,6 +26,7 @@ $(document).ready(function() {
                 + ', ' + JSON.stringify(endTimecodesArray)
                 + ', ' + JSON.stringify(widthArray)
                 + ', ' + JSON.stringify(includeMarkers)
+                + ', ' + JSON.stringify(trackNumber)
                 + ' )', function(returnString) {
                 try {
                     
@@ -35,6 +38,32 @@ $(document).ready(function() {
         }
 
     });
+
+    function setVideoTrackOptions(){
+        var cs = new CSInterface;	
+        // get return value from countTracks() in jsx
+        cs.evalScript('$.runScript.countVideoTracks()', function(returnString){
+          var numTracks = 0;
+          // parse JSON return value
+          try {
+            if (returnString && typeof returnString != "undefined")
+                numTracks = JSON.parse(returnString);
+          }
+          catch (error) {
+            //alert(error);
+          }
+          // add option elements to HTML
+          for (var i = 0; i < numTracks; i++){
+            // set default selection to A2
+            if (i == numTracks - 1){
+              $("#importSRTasMOGRTTrackOptions").append(new Option(i + 1, i + 1, true, true));
+            }
+            else{
+              $("#importSRTasMOGRTTrackOptions").append(new Option(i + 1, i + 1));
+            }
+          }
+        });
+    }
 
     $("#srtParser").click(function(){
         var fileText = addLineBreaks($("#srtContents").text());

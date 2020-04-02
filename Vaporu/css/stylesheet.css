@@ -120,6 +120,10 @@ select {
   display: none;
 }
 
+#helpBox {
+  max-width: 80%;
+}
+
 #hiddenText {
   display: none;
 }

@@ -117,7 +117,7 @@
 							<select id="audioTrackOptions" size="1">
 							</select>
 					</span>
-					<div>
+					<div id="segmentExporterTileSelection"> 
 						<span class="tileSelect">
 							Export tiles
 							<select id="startTileOptions">
@@ -180,16 +180,17 @@
 				<a href="#"><i class="fas fa-times" id="srtFileUploaderReset"></i></a>
 			</div>
 			<div id="srtContents"></div>
-			<div>
 				<!--	<div class="interfaceComponent" id="importText">Import</div>
 					<div class="interfaceComponent"><input id="importCaptions" type="checkbox" name="importCaptions" value="import"></div>
 				-->
-				<div class="interfaceComponent"><input id="srtParser" type="submit" value="Export as SRT"></div>
-				<div class="interfaceComponent"><input id="srtToMOGRT" type="submit" value="Import as MOGRT"></div>
-				<div>
+			<div class="interfaceComponent"><input id="srtParser" type="submit" value="Export as SRT"></div>
+			<div class="interfaceComponent"><input id="srtToMOGRT" type="submit" value="Import as MOGRT"></div>
+			<div>
+				<span id="importCaptionsTrack" class="interfaceComponent"> Track:<select id="importSRTasMOGRTTrackOptions"></select></span>
+				<span id="addCaptionWarningsBox" class="interfaceComponent">
 					<div class="form-Text">Add warnings markers:</div>
-					<input id="addCaptionWarnings" class="form-Text" type="checkbox" name="addCaptionWarnings" value="addCaptionWarnings" checked>
-				</div>
+					<input id="addCaptionWarnings" class="form-Text" type="checkbox" name="addCaptionWarnings" value="addCaptionWarnings" checked>	
+				</span>
 			</div>
 			<div>
 				<div class="form-Text">Selected MOGRT:</div>
@@ -202,20 +203,19 @@
 		<div id="thumbExportControls">
 			<form>
 				<span class=“thumbOptionsContainer”>
-					<div class="form-Text"> </div>
 					<input id="horizontalThumbPixels" type="text" name="horizontal" maxlength="4" value="540">
 					<div class="form-Text">x </div>
 					<input id="verticalThumbPixels" type="text" name="vertical" maxlength="4" value="900">
 				</span>
 
 				<span id="thumbExportDetails">
-						<div class="form-Text">Lock to:</div>
-						<select id="thumbAROptions">
-								<option value="WIDE">16:9</option>
-								<option value="SQUARE">1:1</option>
-								<option value="VERTICAL">9:16</option>
-						</select>
-						<input id="lockAR" class="form-Text" type="checkbox" name="lockAR" value="lockAR">
+					<div class="form-Text">Lock to:</div>
+					<select id="thumbAROptions">
+							<option value="WIDE">16:9</option>
+							<option value="SQUARE">1:1</option>
+							<option value="VERTICAL">9:16</option>
+					</select>
+					<input id="lockAR" class="form-Text" type="checkbox" name="lockAR" value="lockAR">
 				</span>
 			</form>
 
@@ -248,7 +248,7 @@
 			<span class="interfaceComponent">
 				<input id="reframeClipsButton" type="submit" value="Auto Scale">
 			</span>
-			<span>
+			<span id="centerReframeBox">
 				<span class="interfaceComponent">Center:</span>
 				<span class="interfaceComponent"><input id="scaleCenterCheckbox" type="checkbox" name="Center" checked></span>
 			</span>
@@ -277,7 +277,7 @@
 			</div>
 			<hr class="hrMini" size="0.5" color="#121212">
 			<div>
-				<div>
+				<div id="txtToMOGRTBox">
 					<div class="form-Text">Text to MOGRT:</div>
 				</div>
 				<span class="interfaceComponent">Type:</span>
@@ -309,11 +309,15 @@
 			</div>
 			<div id="csvContents"></div>
 			<div class="padMe">
-				<span class=“checkboxContainer”>
+				<span id="courtesiesBox" class=“checkboxContainer”>
 					<div class="checkBox-Text">Courtesies</div>
 					<div class="checkBox"><input id="mode2" type="checkbox" name="Courtesies" value="Courtesies"></div>
+				</span>
+				<span id="TOSBox" class=“checkboxContainer”>
 					<div class="checkBox-Text">TOS</div>
 					<div class="checkBox"><input id="mode3" type="checkbox" name="TOS" value="TOS"></div>
+				</span>
+				<span class=“checkboxContainer”>
 					<div><input id="csvParser" type="submit" value="Insert"></div>
 				</span>
 			</div>
@@ -337,8 +341,13 @@
 
 
 		<div id ="projectToolsControls">
-			<!--
-			<input id="generateReportButton" type="submit" value="Generate Report"> 
+			
+			<input class="interfaceComponent" id="generateReportButton" type="submit" value="Generate Report"> 
+			<input class="interfaceComponent" id="clearCacheButton" type="submit" value="Clear Cache"> 
+			<div id="helpMessagesBox">
+				<div class="form-Text">Display Vaporu help messages:</div>
+				<input id="showVaporuMessages" class="form-Text" type="checkbox" name="showVaporuMessages" value="showVaporuMessages" checked>
+			</div>
 			<div>
 				<span class="interfaceComponent">
 					<input id="relinkFilesButton" type="submit" value="Relink with:">
@@ -350,7 +359,8 @@
 					</select>
 				</span>
 			</div>
-		-->
+		
+			
 			
 			<div>
 				<span class="interfaceComponent">
@@ -389,7 +399,11 @@
 
 			<hr class="hrPadding" size="0.5" color="black">
 		</div>
+
+		<div id="helpBoxHolder">
+			<div class="interfaceComponent" id="helpBox"></div>
+		</div>
 		
 	</body>
-	<div id="panelVersion">2.06</vid>
+	<div id="panelVersion">2.1</vid>
 </html>

@@ -53,73 +53,109 @@ $.runScript = {
 	},
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	clearCache: function () {
+		app.enableQE();
+		var MediaType_ANY = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF";
+		qe.project.deletePreviewFiles(MediaType_ANY);
+		alert("All video and audio preview files deleted.");
+	},
 
 	generateProjectReport: function() {
 		var mainSeq = app.project.activeSequence;
 		var finalString = "";
+		var seqFps = 0;
+		var mainSeqSettings = mainSeq.getSettings();
+		if (mainSeqSettings.videoDisplayFormat == 110)
+			seqFps = 23.976;
+		else if (mainSeqSettings.videoDisplayFormat == 102 || mainSeqSettings.videoDisplayFormat == 102)
+			seqFps = 29.97;
 
-		var infoArray = ["Filetype | Codec | Framerate | Resolution (PAR)"];
-		var countArray = ["Number | "];
+		finalString += "User: " + $.runScript.getUserName() + " " + "\r\n";
+		finalString += "Project: " + app.project.path + " " + "\r\n";
+		finalString += "Premiere Version: " +  app.version + "x" + app.build + "\r\n";
+		// finalString += "Preferences path: " + app.getPProPrefPath + "\r\n";
+		finalString += "---------------------------------------------------------" + "\r\n";
+		finalString += "Sequence Info for: " + mainSeq.name;
+		finalString += " (" + mainSeq.frameSizeHorizontal + " x " + mainSeq.frameSizeVertical;
+		finalString += " @ " + seqFps + "fps)" + "\r\n\r\n";
+
+		var infoArray = [];
+		var clipArray = [];
 
 		for (i = 0; i < mainSeq.videoTracks.numTracks; i++){
 			thisTrack = mainSeq.videoTracks[i];
 			for (j = 0; j < thisTrack.clips.numItems; j++){
-				thisClip = thisTrack.clips[j].projectItem;
-				var thisInfo = "";
-
+				var thisClip;
+				if (typeof thisTrack.clips[j] != "undefined") 
+					thisClip = thisTrack.clips[j].projectItem;
 				if (thisClip && typeof thisClip != "undefined"){
-					var clipFilename;
-					var clipCodec;
-					var resolutionAndPar;
-					var framerate;
-					if (app.isDocumentOpen()) {
-						if (ExternalObject.AdobeXMPScript == undefined) {
-							ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
-						}
-						if (ExternalObject.AdobeXMPScript != undefined) {
-							var projectMetadata = thisClip.getProjectMetadata();
-							var xmp = new XMPMeta(projectMetadata);
-							clipFilename = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.FileName");
-							clipCodec = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.PropertyText.Codec");
-							resolutionAndPar = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoInfo");
-							framerate = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaTimebase");
-						}
-					}
-					var fileType = " ?";
-					if (typeof clipFilename != "undefined"){
-						// parse filename for filetype
-						var lastIndex = clipFilename.value.lastIndexOf(".");
-						var filetype = (clipFilename.value.substr(lastIndex + 1)).replace(/\s/g, '');
-					}
-					// ADD THE VALUES IF THEY ARE VALID
-					thisInfo += filetype + " | "; 
-					thisInfo += typeof clipCodec.value != "undefined" ? (clipCodec.value + " | ") : " ? | "; 
-					thisInfo += typeof resolutionAndPar != "undefined" ? (resolutionAndPar + " | ") : " ? | "; 
-					thisInfo += typeof framerate != "undefined" ? (framerate + " | ") : " ? | "; 
+					var thisCodec = "";
+					var thisClipEntry = "";
+					if (!thisClip.isOffline()){ //if the clip is valid and online, start testing it
+						var clipFilename;
+						var clipCodec;
+						var resolutionAndPar;
+						var framerate;
+						var fileType = " ?";
+						var path = thisClip.getMediaPath();
 
-					var theIndex = infoArray.indexOf(thisInfo);
-					if (theIndex > -1){ //IF WE ALREADY SET THIS KEY, GET THE COUNT AND INCREASE IT
-						var theCount = countArray[theIndex];
-						theCount++;
-						countArray[theIndex] = theCount;
+						if (typeof path != "string") // if path is invalid
+							path = "?"
+
+						if (app.isDocumentOpen()) { // get info
+							if (ExternalObject.AdobeXMPScript == undefined) {
+								ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+							}
+							if (ExternalObject.AdobeXMPScript != undefined) {
+								var projectMetadata = thisClip.getProjectMetadata();
+								var xmp = new XMPMeta(projectMetadata);
+								clipFilename = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.FileName");
+								clipCodec = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.PropertyText.Codec");
+								resolutionAndPar = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoInfo");
+								framerate = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaTimebase");
+							}
+						}
+						
+						if (typeof clipFilename != "undefined"){ // parse filename for filetype
+							if (typeof clipFilename.value != "undefined"){
+								var lastIndex = clipFilename.value.lastIndexOf(".");
+								filetype = (clipFilename.value.substr(lastIndex + 1)).replace(/\s/g, '');
+							}
+						}
+						// ADD THE VALUES IF THEY ARE VALID
+						thisCodec += filetype + " | "; 
+						thisCodec += typeof clipCodec.value != "undefined" ? clipCodec.value : " ? | "; 
+						resolutionAndPar = typeof resolutionAndPar != "undefined" ? resolutionAndPar : " ? | "; 
+						framerate = typeof framerate != "undefined" ? framerate : " ? | ";
+						var thisClipEntry = thisClip.name + " | " + resolutionAndPar + " | " + framerate + " | " + path;
+					}
+					else { //clip is offline.
+						thisCodec = "OFFLINE"; 
+						thisClipEntry = thisClip.name;
+					}
+					var theIndex = infoArray.indexOf(thisCodec);
+					if (theIndex > -1){ //IF WE ALREADY SET THIS KEY, ADD THIS CLIP TO IT
+						var theClipNames = clipArray[theIndex];
+						theClipNames += "\n    - " + thisClipEntry;
+						clipArray[theIndex] = theClipNames;
 					}
 					else {// FIRST TIME SETTING.
-						infoArray.push(thisInfo);
-						countArray.push(1);
+						infoArray.push(thisCodec);
+						clipArray.push("    - " + thisClipEntry);
 					} 
 				}
 			}
 		}
-		
-		for (i = 0; i < infoArray.length; i++)
-			finalString += countArray[i] + "	" + infoArray[i] + "\r\n";
-		alert(finalString);
-		finalString = "There are " + "2" + "clip"
-		// $.runScript.saveFile("projectReport", finalString, "txt", "NULL")
+		for (i = 0; i < infoArray.length; i++){
+			numberOfClips = clipArray[i].split("\n").length;
+			finalString += numberOfClips + " clips of type " + infoArray[i] + ".\r\n" + clipArray[i] + "\r\n";
+		}
+		$.runScript.saveFile("sequenceReport_" + mainSeq.name, finalString, "txt", "NULL")
 	},
 
 	saveFile: function (filename, text, extension, folder) {
-		alert("in savefile")
+		
 		var finalOutputPath = "NULL";
 		var outputPath = folder;
 		if (folder == "NULL")
@@ -145,12 +181,21 @@ $.runScript = {
 		return outFile;
 	},
 
+	getUserName: function () {
+		var homeDir = new File('~/');
+		var userName = homeDir.displayName;
+		homeDir.close();
+		return userName;
+	},
+	
+
 	relinkSelectedFiles: function(isProxy){
 		var mainSeq = app.project.activeSequence;
 		var errorArray = [];
 		var selection = mainSeq.getSelection();
 		if (selection.length == 0) {
 			alert("No clips are selected for replacement.")
+			return 0;
 		}
 		var replacementPath = Folder.selectDialog("Choose the folder your transcodes are in.");
 		if (replacementPath && replacementPath != "undefined"){
@@ -165,6 +210,8 @@ $.runScript = {
 						//ensure the projectItem can be changed
 						if (clipItem.canChangeMediaPath()){
 							var logNote;
+							var isFromLogNote = false;
+							var isFromFileName = false;
 							if (app.isDocumentOpen()) {
 								if (ExternalObject.AdobeXMPScript == undefined) {
 									ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
@@ -181,40 +228,10 @@ $.runScript = {
 								var recordIDsplit = logNote.value.split('"recordId":"');
 								if(recordIDsplit.length == 2){
 									var recordIDsplit2 = recordIDsplit[1].split('-')
-									if(recordIDsplit2.length == 2){
-										// found the RecordID
-										var theRecordID = recordIDsplit2[0];
-										var suffix = isProxy == true ? "r2" : "f0";
-										var extension = isProxy == true ? "mp4" : "*";
-										var fileName = "businessinsider_" + theRecordID + "_" + suffix + "." + extension;
-
-										// create the fullReplacementPath variable, but modify it if this isn't a proxy.
-										var fullReplacementPath = replacementPath.fsName + '/' + fileName;
-										if (isProxy == false) {
-											var resultFileArray = replacementPath.getFiles(fileName);
-											if (typeof resultFileArray == "object" && resultFileArray.length == 1){
-												var foundFile = resultFileArray[0];
-												fullReplacementPath = foundFile.fsName;
-											}
-										}
-										var errorMessage = (fullReplacementPath + " is not in your chosen directory.");
-										if (File(fullReplacementPath).exists){
-											var originalMediaPath = clipItem.getMediaPath();
-											// replace the clip with version in transcodes folder, then check its duration
-											var replaceSuccess = clipItem.changeMediaPath(fullReplacementPath, true);
-											// changemediapath() returns 1 if successful, which is inconsistent with the documentation
-											if (replaceSuccess && replaceSuccess != "undefined")
-												replaceIDs.push(clipItem.nodeId);
-											else 
-												errorArray.push([selection[i].start.seconds, errorMessage]);
-											// whether or not the projectItem was changed, refresh the projectItem
-											clipItem.refreshMedia();
-										}
-										else 
-											errorArray.push([selection[i].start.seconds, errorMessage]);
-									}
+									if(recordIDsplit2.length == 2)
+										var theRecordID = recordIDsplit2[0]; // found the RecordID
 									else {
-										errorMessage = "Could not parse log note for " + selection[i].name + ".";
+										errorMessage = "Could not parse the log note for " + selection[i].name + ".";
 										errorArray.push([selection[i].start.seconds, errorMessage]);
 									}
 								}
@@ -223,8 +240,50 @@ $.runScript = {
 									errorArray.push([selection[i].start.seconds, errorMessage]);
 								}
 							}
-							else {
-								errorMessage = "No log note is set for " + selection[i].name + ". It probably wasn't imported using the Xchange Panel.";
+							else { // TRY FINDING THE RECORD ID FROM THE FILENAME
+								var originalMediaPath = clipItem.getMediaPath();
+								var theFile = File(originalMediaPath);
+								if (theFile.exists){
+									var nameSplit1 = theFile.name.split("businessinsider_");
+									// try checking if the original name is a recordID
+									if (nameSplit1.length == 2){
+										nameSplit2 = nameSplit1[1].split("_");
+										if (nameSplit2.length == 2)
+											var theRecordID = nameSplit2[0]; // found the rid
+									}
+								}
+							}
+							if (typeof theRecordID != "undefined"){ // we have found the recordID
+								var suffix = isProxy == true ? "r2" : "f0";
+								var extension = isProxy == true ? "mp4" : "*";
+								var fileName = "businessinsider_" + theRecordID + "_" + suffix + "." + extension;
+
+								// create the fullReplacementPath variable, but modify it if this isn't a proxy.
+								var fullReplacementPath = replacementPath.fsName + '/' + fileName;
+								if (isProxy == false) {
+									var resultFileArray = replacementPath.getFiles(fileName);
+									if (typeof resultFileArray == "object" && resultFileArray.length == 1){
+										var foundFile = resultFileArray[0];
+										fullReplacementPath = foundFile.fsName;
+									}
+								}
+								var errorMessage = (fullReplacementPath + " is not in your chosen directory.");
+								if (File(fullReplacementPath).exists){
+									// replace the clip with version in transcodes folder, then check its duration
+									var replaceSuccess = clipItem.changeMediaPath(fullReplacementPath, true);
+									// changemediapath() returns 1 if successful, which is inconsistent with the documentation
+									if (replaceSuccess && replaceSuccess != "undefined")
+										replaceIDs.push(clipItem.nodeId);
+									else 
+										errorArray.push([selection[i].start.seconds, errorMessage]);
+									// whether or not the projectItem was changed, refresh the projectItem
+									clipItem.refreshMedia();
+								}
+								else 
+									errorArray.push([selection[i].start.seconds, errorMessage]);
+							}
+							else { // RECORDID IS NOT IN THE LOG NOTE OR FILENAME
+								errorMessage = "No log note or MAM name is set for " + selection[i].name + ". It probably wasn't imported using the Xchange Panel or is not downloaded from the MAM.";
 								errorArray.push([selection[i].start.seconds, errorMessage]);
 							}
 						}
@@ -358,7 +417,9 @@ $.runScript = {
 					var entry = csvArray[line].toString();
 					var firstIndex = entry.indexOf(",");
 					var recordID = entry.substr(0, firstIndex - 2);
-					var name = entry.substr(firstIndex + 2);
+					var name = entry.substr(firstIndex + 1);
+					while (name.charAt(0) == " ") // GET RID OF LEADING WHITESPACE
+						name = name.substr(1);
 					ridArray.push(recordID);
 					nameArray.push(name);
 				}
@@ -377,6 +438,9 @@ $.runScript = {
 							var lastIndex = originalMediaPath.lastIndexOf(".");
 							var extension = (originalMediaPath.substr(lastIndex + 1)).replace(/\s/g, '');
 							var theFile = File(originalMediaPath);
+							// if (!theFile.exists && renameClipsOnly){ // THE ORIGINAL FILE ISN'T VALID BUT WE ONLY WANT TO RENAME CLIPS ANYWAY
+							// 	theFile = File("/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/tempMP4.mp4");
+							// }
 							if (theFile.exists){ // THE FILE IS VALID TO BE RENAMED
 								var newFilename;
 								var folderName = theFile.parent.name;
@@ -431,21 +495,37 @@ $.runScript = {
 															break;
 														}
 													}
-													if (index == -1) //matches ridname format, but wasn't found here
-														errorArray.push([selection[i].start.seconds, "That record ID is not in this project CSV."]);						
+												}
+											}
+											// try getting from the original clip name. might be able to delete this block after testing
+											if (isFromRidName == false && OGFileValue.toString().length > 0) {
+												var nameSplit1 = OGFileValue.toString().split("businessinsider_");
+												if (nameSplit1.length == 2){
+													nameSplit2 = nameSplit1[1].split("_");
+													if (nameSplit2.length == 2){
+														isFromRidName = true;
+														for (ridEntry in ridArray){
+															if (ridArray[ridEntry] == nameSplit2[0]){
+																index = ridEntry;
+																break;
+															}
+														}
+														if (index == -1) //matches ridname format, but wasn't found here
+															errorArray.push([selection[i].start.seconds, "That record ID is not in this project CSV.\n"]);						
+													}
 												}
 											}
 											// the original name is not from a recordID. Try finding by clip name in the CSV
 											if (isFromRidName == false) {
 												for (nameEntry in nameArray){
-													if (nameArray[nameEntry] == thisRid){
-														index = nameEntry
+													if (nameArray[nameEntry] == theFile.name){
+														index = nameEntry;
 														isFromClipName == true;
 														break;
 													}
 												}
 												if (index == -1) //matches ridname format, but wasn't found here
-													errorArray.push([selection[i].start.seconds, "That clip name is not in this project CSV."]);
+													errorArray.push([selection[i].start.seconds, "That clip name is not in this project CSV.\n"]);
 											}
 											if (isFromRidName || isFromClipName){ // the clip was located in the CSV
 												clipValue = nameArray[index] + "." + extension;
@@ -461,6 +541,8 @@ $.runScript = {
 									if (alreadySetMetadata){ // at this point, metadata should be set.
 										newFilename = renameBy == 1? clipValue: ridValue;
 									}
+									else // if we can't create a new name for some reason, keep the new file name as the old one.
+										newFilename = clipItem.name;
 								}
 								if (renameClipsOnly){ // user is renaming clip in Premiere, not the actual file
 									if (typeof newFilename != "undefined"){ // if new name set, rename clip in the bin AND on the timeline
@@ -469,7 +551,7 @@ $.runScript = {
 										replaceIDs.push(clipItem.nodeId);
 									}
 									else
-										errorArray.push([selection[i].start.seconds, "Couldn't parse filename for " + fullReplacementPath + "."]);
+										errorArray.push([selection[i].start.seconds, "Couldn't parse filename for " + clipItem.name + "."]);
 								}
 								else if (theFile.name != newFilename) { // ONLY RENAME IF THE NEW NAME ISN'T THE SAME AS CURRENT FILE NAME
 									//rename file. temporarily link to a tiny mp4 included in the Vaporu directory, so that clips aren't registered by Premiere as offline
@@ -1074,16 +1156,21 @@ $.runScript = {
 		}
 	},
 
-	convertCaptionsToMOGRT: function (textArray, startTimecodesArray, endTimecodesArray, widthArray, includeMarkers) {
+	convertCaptionsToMOGRT: function (textArray, startTimecodesArray, endTimecodesArray, widthArray, includeMarkers, trackNumber) {
 		app.enableQE();
 		var mainSequence = app.project.activeSequence;
 		var confirmContinue = true;
+		if (mainSequence.videoTracks.numTracks < trackNumber){
+			alert("Track " + trackNumber + " doesn't exist in this sequence.")
+			return 0;
+		}
+		
 		// ensure these are arrays
 		if (typeof textArray == "object" && typeof startTimecodesArray == "object" && typeof endTimecodesArray == "object"){
 			for (var i = 0; i < textArray.length; i++){
 				var isFirstCaption = i == 0 ? true : false;
 				if (confirmContinue) {
-					confirmContinue = $.runScript.insertCaption(startTimecodesArray[i], endTimecodesArray[i], textArray[i], mainSequence.videoTracks.numTracks - 1, isFirstCaption);
+					confirmContinue = $.runScript.insertCaption(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
 					//alert(confirmContinue)
 					if (typeof widthArray == "object" && includeMarkers == true){
 						if (parseInt(widthArray[i]) > 150){
