@@ -1160,6 +1160,11 @@ $.runScript = {
 		app.enableQE();
 		var mainSequence = app.project.activeSequence;
 		var confirmContinue = true;
+
+		if (!trackNumber || typeof trackNumber == "undefined" || trackNumber < 1){
+			alert("No video track selected. Please select a sequence and refresh Vaporu.")
+		}
+
 		if (mainSequence.videoTracks.numTracks < trackNumber){
 			alert("Track " + trackNumber + " doesn't exist in this sequence.")
 			return 0;
@@ -1194,6 +1199,7 @@ $.runScript = {
 		var selection = mainSequence.getSelection();
 		if (selection.length == 0) {
 			alert("No clips are selected.")
+			return 0;
 		}
 		var theText = "";
 		// go through each media to replace, then replace it.
@@ -1842,6 +1848,8 @@ $.runScript = {
 				var captionProjectItem;
 				var newMOGRT;
 
+				// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
+				app.project.rootItem.select();
 				// check to see if the Captions MOGRT already exists 
 				var MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 				if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
@@ -1863,7 +1871,7 @@ $.runScript = {
 					MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 				}
 				// if after adding the MOGRT, we now have the mogrt bin
-				if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
+				if (typeof MOGRTBin != "undefined"){
 					// go through the mogrt bin and find the Caption 
 					for (i = 0; i < MOGRTBin.children.numItems; i++) {
 						if (MOGRTBin.children[i].name == "Caption"){
@@ -1871,21 +1879,28 @@ $.runScript = {
 							break;
 						}
 					}
-					// if the caption projectItem somehow still doesn't exist, just bring it in from the MGT library
+					if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
+						newMOGRT.remove(false,true);
+					// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
 					if (captionProjectItem && typeof captionProjectItem != "undefined"){
-						if (newMOGRT && newMOGRT != "undefined")
-							newMOGRT.remove(false,true);
 						captionProjectItem.setInPoint(0);
 						captionProjectItem.setOutPoint(parseFloat(endTime) - parseFloat(insertTime));
-						var vidTrackItem = app.project.activeSequence.videoTracks[vidTrack];
+						var vidTrackItem = mainSequence.videoTracks[vidTrack];
 						//delete everything on the top track, then insert captions
-						if (isFirstCaption && vidTrackItem.clips.numItems != 0){
-							confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
-							if (confirmDelete){
-								while (vidTrackItem.clips.numItems > 0){
-									vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
+						if (isFirstCaption){
+							//alert("first caption and" + vidTrackItem.clips.numItems) 
+							if (vidTrackItem.clips.numItems != 0){
+								confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
+								if (confirmDelete){
+									while (vidTrackItem.clips.numItems > 0){
+										vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
+									}
 								}
+								else // user decided to not proceed with insertion
+									return 0
 							}
+							else
+								confirmDelete = true;
 						}
 						else
 							confirmDelete = true;
@@ -1908,6 +1923,10 @@ $.runScript = {
 									mogrtAR.setValue(3);
 							}
 						}
+					}
+					else{
+						alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
+						confirmDelete = false;
 					}
 				}
 			}
@@ -2199,6 +2218,17 @@ $.runScript = {
 			}
 		};
 		return deepSearchBin(app.project.rootItem);
+	},
+
+		// function from Premiere CEP panel
+	searchForRootBinWithName: function (nameToFind) {
+		// deep-search a folder by name in project
+		var rootBinChildren = app.project.rootItem.children;
+		for (var i = 0; i < rootBinChildren.numItems; i++) {
+			if (rootBinChildren[i].name == nameToFind && rootBinChildren[i].type === 2) {
+				return rootBinChildren[i];
+			}
+		}
 	},
 
 	// function from Premiere OnScript

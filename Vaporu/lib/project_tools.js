@@ -308,7 +308,7 @@ $(document).ready(function() {
     )}, function(){hideHelp()}); 
 
     $("#relinkFilesButton").hover(function () { showHelp(
-        'Choose a directory to swap videos (in the format "businessinsider_recordID_x) selected in your timeline with.'
+        'Choose a directory to swap videos (in the format "businessinsider_recordID_x") selected in your timeline with.'
     )}, function(){hideHelp()}); 
     $("#replaceProxyOptions").hover(function () { showHelp(
         'Choose whether you want the high-res (ending with "f0") or proxy (ending with "r2") files downloaded from the MAM.'
