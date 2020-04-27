@@ -78,10 +78,11 @@ $.runScript = {
 		finalString += "---------------------------------------------------------" + "\r\n";
 		finalString += "Sequence Info for: " + mainSeq.name;
 		finalString += " (" + mainSeq.frameSizeHorizontal + " x " + mainSeq.frameSizeVertical;
-		finalString += " @ " + seqFps + "fps)" + "\r\n\r\n";
+		finalString += " @ " + seqFps + "fps)";
 
 		var infoArray = [];
 		var clipArray = [];
+		var IDArray = [];
 
 		for (i = 0; i < mainSeq.videoTracks.numTracks; i++){
 			thisTrack = mainSeq.videoTracks[i];
@@ -92,64 +93,75 @@ $.runScript = {
 				if (thisClip && typeof thisClip != "undefined"){
 					var thisCodec = "";
 					var thisClipEntry = "";
+
 					if (!thisClip.isOffline()){ //if the clip is valid and online, start testing it
-						var clipFilename;
-						var clipCodec;
-						var resolutionAndPar;
-						var framerate;
-						var fileType = " ?";
-						var path = thisClip.getMediaPath();
+						if (!thisClip.isSequence()){ // make sure this isn't a nested or multicam sequence
+							var clipFilename;
+							var clipCodec;
+							var resolutionAndPar;
+							var framerate;
+							var fileType = " ?";
+							var path = thisClip.getMediaPath();
 
-						if (typeof path != "string") // if path is invalid
-							path = "?"
+							if (typeof path != "string") // if path is invalid
+								path = "?"
 
-						if (app.isDocumentOpen()) { // get info
-							if (ExternalObject.AdobeXMPScript == undefined) {
-								ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+							if (app.isDocumentOpen()) { // get info
+								if (ExternalObject.AdobeXMPScript == undefined) {
+									ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+								}
+								if (ExternalObject.AdobeXMPScript != undefined) {
+									var projectMetadata = thisClip.getProjectMetadata();
+									var xmp = new XMPMeta(projectMetadata);
+									clipFilename = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.FileName");
+									clipCodec = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.PropertyText.Codec");
+									resolutionAndPar = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoInfo");
+									framerate = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaTimebase");
+								}
 							}
-							if (ExternalObject.AdobeXMPScript != undefined) {
-								var projectMetadata = thisClip.getProjectMetadata();
-								var xmp = new XMPMeta(projectMetadata);
-								clipFilename = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.FileName");
-								clipCodec = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.PropertyText.Codec");
-								resolutionAndPar = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoInfo");
-								framerate = xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaTimebase");
+							
+							if (typeof clipFilename != "undefined"){ // parse filename for filetype
+								if (typeof clipFilename.value != "undefined"){
+									var lastIndex = clipFilename.value.lastIndexOf(".");
+									filetype = (clipFilename.value.substr(lastIndex + 1)).replace(/\s/g, '');
+								}
 							}
+							// ADD THE VALUES IF THEY ARE VALID
+							thisCodec += filetype + " | "; 
+							thisCodec += typeof clipCodec.value != "undefined" ? clipCodec.value : " ? | "; 
+							resolutionAndPar = typeof resolutionAndPar != "undefined" ? resolutionAndPar : " ? | "; 
+							framerate = typeof framerate != "undefined" ? framerate : " ? | ";
+							var thisClipEntry = thisClip.name + " | " + resolutionAndPar + " | " + framerate + " | " + path;
 						}
-						
-						if (typeof clipFilename != "undefined"){ // parse filename for filetype
-							if (typeof clipFilename.value != "undefined"){
-								var lastIndex = clipFilename.value.lastIndexOf(".");
-								filetype = (clipFilename.value.substr(lastIndex + 1)).replace(/\s/g, '');
-							}
+						else { //clip is offline.
+							thisCodec = "NESTED OR MULTICAM SEQUENCE"; 
+							thisClipEntry = thisClip.name;
 						}
-						// ADD THE VALUES IF THEY ARE VALID
-						thisCodec += filetype + " | "; 
-						thisCodec += typeof clipCodec.value != "undefined" ? clipCodec.value : " ? | "; 
-						resolutionAndPar = typeof resolutionAndPar != "undefined" ? resolutionAndPar : " ? | "; 
-						framerate = typeof framerate != "undefined" ? framerate : " ? | ";
-						var thisClipEntry = thisClip.name + " | " + resolutionAndPar + " | " + framerate + " | " + path;
 					}
 					else { //clip is offline.
 						thisCodec = "OFFLINE"; 
 						thisClipEntry = thisClip.name;
 					}
-					var theIndex = infoArray.indexOf(thisCodec);
-					if (theIndex > -1){ //IF WE ALREADY SET THIS KEY, ADD THIS CLIP TO IT
-						var theClipNames = clipArray[theIndex];
-						theClipNames += "\n    - " + thisClipEntry;
-						clipArray[theIndex] = theClipNames;
+					var theIDIndex = IDArray.indexOf(thisClip.nodeId)
+					if (theIDIndex == -1) { // this clip hasn't been processed yet.
+						var theIndex = infoArray.indexOf(thisCodec);
+						if (theIndex > -1){ //IF WE ALREADY HAVE THIS CODEC, ADD THIS TO THE LIST
+							var theClipNames = clipArray[theIndex];
+							theClipNames += "\n    - " + thisClipEntry;
+							clipArray[theIndex] = theClipNames;
+						}
+						else {// FIRST TIME SETTING.
+							infoArray.push(thisCodec);
+							clipArray.push("    - " + thisClipEntry);
+						} 
+						IDArray.push(thisClip.nodeId);
 					}
-					else {// FIRST TIME SETTING.
-						infoArray.push(thisCodec);
-						clipArray.push("    - " + thisClipEntry);
-					} 
 				}
 			}
 		}
 		for (i = 0; i < infoArray.length; i++){
 			numberOfClips = clipArray[i].split("\n").length;
-			finalString += numberOfClips + " clips of type " + infoArray[i] + ".\r\n" + clipArray[i] + "\r\n";
+			finalString += "\r\n\r\n" + numberOfClips + " clips of type " + infoArray[i] + ".\r\n" + clipArray[i] + "\r\n";
 		}
 		$.runScript.saveFile("sequenceReport_" + mainSeq.name, finalString, "txt", "NULL")
 	},
