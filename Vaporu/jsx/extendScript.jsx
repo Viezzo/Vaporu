@@ -651,6 +651,67 @@ $.runScript = {
 		}
 	},
 
+	addCommentsXML: function(xmlInput, addToTimeline) {
+		app.enableQE();
+		var mainSequence = app.project.activeSequence;
+
+		var markersObject;
+		var insertOffset = 0;
+		if (addToTimeline == true){
+			markersObject = mainSequence.markers;
+			if (mainSequence.getInPoint() > 0)
+				insertOffset = parseFloat(mainSequence.getInPoint());
+		}
+		else { // we're adding markers to a video clip
+			var selection = mainSequence.getSelection();
+			for(var i = selection.length - 1; i >= 0; i--) { // make sure we're only looking at video, not audio
+				if(selection[i].mediaType != "Video") 
+					selection.splice(i, 1);
+			}
+			if (selection.length != 1) {
+				alert("Please select one and only one clip in your timeline to add comments to.");
+				return 0;
+			}
+			var clipItem = selection[0].projectItem;
+			if (clipItem.type == ProjectItemType.CLIP || clipItem.type == ProjectItemType.FILE) 
+				var markersObject = clipItem.getMarkers();
+		}
+
+		if (markersObject) { // we got the markers object
+			var xmlObj = new XML(xmlInput);
+			if (!xmlObj.project.children.clip || typeof xmlObj.project.children.clip == "undefined"){
+				alert("Invalid XML file. Ask Adrian for help if you need it.")
+				return 0;
+			}
+			var framerate = xmlObj.project.children.clip.rate.timebase;
+			if (framerate == 30)
+				framerate = 29.97
+			if (framerate == 24)
+				framerate == 23.976;
+			var markers = xmlObj.project.children.clip.marker;
+
+			if (typeof framerate != 'undefined' && framerate > 0){ // valid framerate
+				if (markers &&  typeof markers != 'undefined'){
+					for (markerIndex in markers){
+						var thisMarker = markers[markerIndex];
+						var secondsIn = (thisMarker.in / framerate) + insertOffset;
+						var secondsOut = thisMarker.out > thisMarker.in ? (thisMarker.out / framerate) + insertOffset : secondsIn;
+						var commentName = thisMarker.name;
+						var comments = thisMarker.comment;
+
+						if (secondsIn && secondsOut && commentName && comments) {
+							var newMarker = markersObject.createMarker(secondsIn);
+							//var guid = new_marker.guid;
+							newMarker.name = commentName;
+							newMarker.comments = comments;
+							newMarker.end = secondsOut;
+						}
+					}
+				}
+			}
+		}
+	},
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
 	thumbExport: function (hPixels, vPixels) {

@@ -32,6 +32,11 @@ select {
   overflow-y: scroll; 
 }
 
+#addMAMCommentsHolder {
+  padding-bottom: 0;
+  margin-bottom: -6px;
+}
+
 #captionCharacterLength {
   display: inline-block;
   margin: 0 auto;
@@ -45,6 +50,18 @@ select {
 
 #controls {
   display: inline;
+}
+
+#addCommentsXMLHolder {
+  background-color: #bdbdbd;
+  border: 3px solid rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+  color: black;
+  margin: 0 auto;
+  text-align: center;
+  max-width: 200px;
+  width: 50vw;
 }
 
 #csvHolder{
@@ -86,7 +103,7 @@ select {
   width: 50vw;
 }
 
-#csvContents, #renameCsvContents {
+#csvContents, #renameCsvContents, #addCommentsXMLContents {
   display: none;
 }
 
@@ -94,7 +111,7 @@ select {
   display: none;
 }
 
-#csvFileList, #renameCsvFileList {
+#csvFileList, #renameCsvFileList, #addCommentsXMLFileList {
   display: none;
 }
 
@@ -102,7 +119,7 @@ select {
   display: none;
 }
 
-#csvFileUploaderReset, #renameCsvFileUploaderReset {
+#csvFileUploaderReset, #renameCsvFileUploaderReset, #addCommentsXMLFileUploaderReset {
   padding: 7px;
   display: none;
 }
@@ -121,6 +138,8 @@ select {
 }
 
 #helpBox {
+  height: 40px;
+  margin-top: -3px;
   max-width: 80%;
 }
 
@@ -142,6 +161,10 @@ select {
 
 #panelVersion {
   display: none;
+}
+
+#relinkHolder {
+  margin-bottom: -10px;
 }
 
 #scaleToValue {
@@ -189,7 +212,7 @@ select {
   display: none;
 }
 
-#csvUploadInput, #renameCsvUploadInput {
+#csvUploadInput, #renameCsvUploadInput, #addCommentsXMLUploadInput {
   display: none;
 }
 
@@ -197,7 +220,7 @@ select {
   display: none;
 }
 
-#csvUploadLink, #renameCsvUploadLink {
+#csvUploadLink, #renameCsvUploadLink, #addCommentsXMLUploadLink {
   color: blue;
 }
 

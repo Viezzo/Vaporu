@@ -92,7 +92,7 @@ $(document).ready(function() {
     });
     $("#renameCsvUploadLink").on('click', function(e){
         e.preventDefault();
-        $("#csvUploadInput:hidden").trigger('click');
+        $("#renameCsvUploadInput:hidden").trigger('click');
     });
 
     // file drag and dropper
@@ -104,11 +104,11 @@ $(document).ready(function() {
 
         'drop': function(e) {
             $("#renameCsvContents").text("");
-            var csvContents = extractFileData(e);
+            var csvContents = extractFileData(e, "csv");
         }
     });
 
-    function extractFileData(e){
+    function extractFileData(e, extension){
         var dataTransfer =  e.originalEvent.dataTransfer;
         if( dataTransfer && dataTransfer.files.length) {
             e.preventDefault();
@@ -116,25 +116,96 @@ $(document).ready(function() {
             // go through all uploaded files, but set #csvContents to the top file
             $.each( dataTransfer.files, function(i, file) {
                 var fileNameArray = (file.name).split(".");
-                if (fileNameArray[fileNameArray.length - 1].toLowerCase() == "csv" ) {
+                if (fileNameArray[fileNameArray.length - 1].toLowerCase() == extension ) {
                     var reader = new FileReader();
+                    var csvOrXml = "#renameCsv";
+                    if (extension == "xml") // adjust element ids depending on operation
+                        csvOrXml = "#addCommentsXML";
                     reader.onload = $.proxy(function(file, $fileList, event) {
-                        $("#renameCsvContents").text(event.target.result);
-                        $("#renameCsvFileList").css("display", "inline");
+                        $(csvOrXml + "Contents").text(event.target.result);
+                        $(csvOrXml + "FileList").css("display", "inline");
                         //var img = file.type.match('image.*') ? "<img src='" + event.target.result + "' /> " : "";
                         $fileList.prepend( $("<li>").append(file.name));
-                    }, this, file, $("#renameCsvFileList"));
+                    }, this, file, $(csvOrXml + "FileList"));
                     reader.readAsText(file);
-                    $("#renameCsvFileUploaderReset").css("display", "inline");
-                    $("#renameCsvDragBoxText").css("display", "none");
+                    $(csvOrXml + "FileUploaderReset").css("display", "inline");
+                    $(csvOrXml + "DragBoxText").css("display", "none");
                 }
                 else {
                     var cs = new CSInterface;	
-                    cs.evalScript('$.runScript.premiereAlert("That\'s not a CSV file. Please upload a valid file." )');
+                    cs.evalScript('$.runScript.premiereAlert("That\'s not a ' + JSON.stringify(extension) + ' file. Please upload a valid file." )');
                 }
             });
         }
     }
+
+    //---------------- MAM Comments adder ------------------
+
+    $("#addCommentsXMLButton").click(function(){
+        var cs = new CSInterface;
+        var xml = $("#addCommentsXMLContents").text();
+        var addToTimeline = $("#addCommentsXMLOptions").val() == "Clip" ? false : true;
+        if (xml.length == 0 && addToTimeline == true){
+            var err = "Upload an XML to use this option. Ask Adrian if you need help.";
+            cs.evalScript('$.runScript.premiereAlert(' + JSON.stringify(err) + ')');
+        }
+        else
+            cs.evalScript('$.runScript.addCommentsXML(' + JSON.stringify(xml) + ',' + JSON.stringify(addToTimeline) + ')');
+    });
+    // reset button and its tooltip
+    $("#addCommentsXMLFileUploaderReset").click(function(){
+        //reset the file contents of previous xml file, and of the file list
+        $("#addCommentsXMLContents").text("");
+        $("#addCommentsXMLFileList").css("display", "none");
+        $("#addCommentsXMLFileList").text("");
+        $(this).css("display", "none");
+        $("#addCommentsXMLDragBoxText").css("display", "block");
+    });
+    $("#addCommentsXMLFileUploaderReset").hover(function () {
+        $(this).animate({color: "#ff1500"}, 150);
+    }, function(){
+        $(this).animate({color: "#424242"});
+    });
+
+    // for user to upload file using file explorer
+    $("#addCommentsXMLUploadInput").change(function(e){
+        var fileName = e.target.files[0].name;
+        var fileNameArray = fileName.split(".");
+        if (fileNameArray[fileNameArray.length - 1].toLowerCase() == "xml" ) {
+            var reader = new FileReader();
+            reader.onload = function () {
+                $("#addCommentsXMLContents").text("");
+                $("#addCommentsXMLContents").text(reader.result);
+                $("#addCommentsXMLFileList").css("display", "inline");
+                $("#addCommentsXMLFileList").prepend($("<li>").append(fileName));
+            };
+            // start reading the file. When it is done, calls the onload event defined above.
+            reader.readAsText(e.target.files[0]);
+            $("#addCommentsXMLFileUploaderReset").css("display", "inline");
+            $("#addCommentsXMLDragBoxText").css("display", "none");
+        }
+        else {
+            var cs = new CSInterface;	
+            cs.evalScript('$.runScript.premiereAlert("That\'s not a XML file. Please upload a valid file." )');
+        }
+    });
+    $("#addCommentsXMLUploadLink").on('click', function(e){
+        e.preventDefault();
+        $("#addCommentsXMLUploadInput:hidden").trigger('click');
+    });
+
+    // file drag and dropper
+    $('#addCommentsXMLHolder').on({
+        'dragover': function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }, 
+
+        'drop': function(e) {
+            $("#addCommentsXMLContents").text("");
+            var xmlContents = extractFileData(e, "xml");
+        }
+    });
 
     //---------------- HELP BOX ------------------
 
@@ -325,6 +396,16 @@ $(document).ready(function() {
     )}, function(){hideHelp()});
     $("#renameCsvHolder").hover(function () { showHelp(
         'Upload a file to match record ID with clip names. Ask Adrian if you need help getting the right file.'
+    )}, function(){hideHelp()});
+
+    $("#addCommentsXMLButton").hover(function () { showHelp(
+        "Adds the comments from the MAM to your selected clip or sequence."
+    )}, function(){hideHelp()});
+    $("#addCommentsXMLOptions").hover(function () { showHelp(
+        'Do you want to add the MAM comments to the only video selected in your sequence, or to your sequence starting at its In Point?'
+    )}, function(){hideHelp()});
+    $("#addCommentsXMLHolder").hover(function () { showHelp(
+        'Upload a Premiere CC XML file for this clip from the MAM. Ask Adrian if you need help getting the right file.'
     )}, function(){hideHelp()});
 
 });

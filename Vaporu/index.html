@@ -348,7 +348,7 @@
 				<div class="form-Text">Display Vaporu help messages:</div>
 				<input id="showVaporuMessages" class="form-Text" type="checkbox" name="showVaporuMessages" value="showVaporuMessages" checked>
 			</div>
-			<div>
+			<div id="relinkHolder">
 				<span class="interfaceComponent">
 					<input id="relinkFilesButton" type="submit" value="Relink with:">
 				</span>
@@ -360,8 +360,6 @@
 				</span>
 			</div>
 		
-			
-			
 			<div>
 				<span class="interfaceComponent">
 					<input id="renameFilesButton" type="submit" value="Rename">
@@ -397,13 +395,35 @@
 			</div>
 			<div id="renameCsvContents"></div>
 
+			<div id="addMAMCommentsHolder">
+				<div>Add MAM review annotations to selected clip:
+					<div>
+						<input class='interfaceComponent' id="addCommentsXMLButton" type="submit" value="Add Comments">
+						to
+						<select class='interfaceComponent' id="addCommentsXMLOptions">
+							<option value="Clip">Clip</option>
+							<option value="Timeline">Timeline</option>
+						</select>
+					</div>
+					<div id="addCommentsXMLHolder">
+						<div id="addCommentsXMLDragBoxText">
+							Drag your XML file into this gray box, or click
+							<input id="addCommentsXMLUploadInput" type="file"/>
+							<a href="" id="addCommentsXMLUploadLink">here</a>
+							to find it.
+						</div>
+						<i><td><ul id="addCommentsXMLFileList"></ul></td></i>
+						<a href="#"><i class="fas fa-times" id="addCommentsXMLFileUploaderReset"></i></a>
+					</div>
+				</div>
+				<div id="addCommentsXMLContents"></div>
+			</div>
 			<hr class="hrPadding" size="0.5" color="black">
 		</div>
-
 		<div id="helpBoxHolder">
 			<div class="interfaceComponent" id="helpBox"></div>
 		</div>
 		
 	</body>
-	<div id="panelVersion">2.12</vid>
+	<div id="panelVersion">2.13</vid>
 </html>
