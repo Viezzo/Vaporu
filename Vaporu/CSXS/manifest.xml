@@ -48,11 +48,11 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 				</Lifecycle>
 				<UI>
 					<Type>Panel</Type>
-					<Menu>Vaporu 2.13</Menu>
+					<Menu>Vaporu 3.0</Menu>
 					<Geometry>
 						<Size>
 							<Height>400</Height>
-							<Width>300</Width>
+							<Width>500</Width>
 						</Size>
 					</Geometry>
 				</UI>

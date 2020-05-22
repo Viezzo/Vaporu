@@ -20,14 +20,17 @@
 		<!-- My JavaScript functions -->
 		<script src="./lib/checkForUpdates.js"></script>
 		<script src="./lib/segmentExporter.js"></script>
+		<script src="./lib/fullExporter.js"></script>
 		<script src="./lib/foleyPads.js"></script>
 		<script src="./lib/scriptToTimeline_old.js"></script>
 		<script src="./lib/convertSRT.js"></script>
 		<script src="./lib/thumbnailExport.js"></script>
 		<script src="./lib/fitToSequence.js"></script>
 		<script src="./lib/MOGRTMaster.js"></script>
-		<script src="./lib/project_setup.js"></script>
+		<script src="./lib/transcode.js"></script>
 		<script src="./lib/project_tools.js"></script>
+		<script src="./lib/colorSwatches.js"></script>
+		<script src="./lib/preferences.js"></script>
 		<!-- Font Awesome, for graphics icons -->
 		<script src="./lib/fontawesome.js"></script>
 
@@ -71,12 +74,18 @@
 	<body>
 		<div>
 			<span class="interfaceComponent">
-				<img id="insider-logo" onClick="window.location.reload();" src="./images/insider-logo-transparent.png" width="120px">
-			</span>
-	
-			<span class="interfaceComponent">
 				<div id="updateNotification"><i class="fas fa-exclamation-circle"></i></div>
 			</span>
+
+			<span class="interfaceComponent">
+				<img id="insider-logo" onClick="window.location.reload();" src="./images/insider-logo-transparent.png" width="120px">
+			</span>
+
+			<span class="interfaceComponent">
+				<i class="fas fa-save"></i>
+				<span id="saveMessage"></span>
+			</span>
+
 		</div>
 
 		<hr size="0.5" color="black">
@@ -85,23 +94,25 @@
 
 		<div class="row">
 			<div class="column">
-				<img id="segmentExporterButton" src="./images/segment_exporter.png">
-				<img id="srtImporterButton" src="./images/captions_converter.png">
-				<img id="thumbExportButton" src="./images/thumbnail_export.png">
-				<img id="projectSetupButton" src="./images/transcode.png">
+				<img class="appButton" id="segmentExporterButton" data-appName="segmentExporterControls" src="./images/segment_exporter.png">
+				<img class="appButton" id="fullExporterButton" data-appName="fullExporterControls" src="./images/full_exporter.png">
+				<img class="appButton" id="srtImporterButton" data-appName="srtImporterControls" src="./images/captions_converter.png">
+				<img class="appButton" id="thumbExportButton" data-appName="thumbExportControls" src="./images/thumbnail_export.png">
+				<img class="appButton" id="transcodeButton" data-appName="transcodeControls" src="./images/transcode.png">
 			</div>
 			<div class="column">
-				<img id="fitToSequenceButton" src="./images/fit_to_sequence.png">
-				<img id="reframeMOGRTButton" src="./images/mogrt_master.png">
-				<img id="scriptImporterButton" src="./images/script_importer.png">
-				<img id="projectToolsButton" src="./images/project_tools.png">
-				
+				<img class="appButton" id="fitToSequenceButton" data-appName="reframeClipsControls" src="./images/fit_to_sequence.png">
+				<img class="appButton" id="reframeMOGRTButton" data-appName="reframeMOGRTControls" src="./images/mogrt_master.png">
+				<img class="appButton" id="scriptImporterButton" data-appName="scriptImporterControls" src="./images/script_importer.png">
+				<img class="appButton" id="projectToolsButton" data-appName="projectToolsControls" src="./images/project_tools.png">
+				<img class="appButton" id="colorPalettesButton" data-appName="colorPalettesApp" src="./images/color_palettes.png">
+
 			</div>
 		  </div>
 		<hr size="0.5" color="black">
 
 		
-		<div id="segmentExporterControls">
+		<div class="app" id="segmentExporterControls">
 			<div id="landing" display="hidden"> 
 				<a href="#" data-toggle="exporterRefreshTooltip" title="Refresh"><i class="fas fa-sync-alt" id="exportRefreshButton"></i></a>
 				<select id="exportPresetOptions">
@@ -134,41 +145,42 @@
 			<hr size="0.5" color="black">
 		</div>
 
-
-		<div id="gridModal">
-			<span class="interfaceComponent">
-				<div> 
-					<span class="grid-pad" data-padNum='1'></span><span class="grid-pad" data-padNum='2'></span><span class="grid-pad" data-padNum='3'></span>
+		<div class="app" id="fullExporterControls">
+			Export: 
+			<input class="interfaceComponent" id="exportPreviewButton" type="submit" value="Review">
+			<input class="interfaceComponent" id="exportHiResButton" type="submit" value="Final">
+			<!--<div>
+				<div class="form-Text">
+					Name:
+					<input class="interfaceComponent" id="fullExportSequenceName" type="text" name="sequenceName" value=""> .mp4
 				</div>
-				<div>
-					<span class="grid-pad" data-padNum='4'></span><span class="grid-pad" data-padNum='5'></span><span class="grid-pad" data-padNum='6'></span>
-				</div>
-				<div>
-					<span class="grid-pad" data-padNum='7'></span><span class="grid-pad" data-padNum='8'></span><span class="grid-pad" data-padNum='9'></span>
-				</div>
-			</span>
-			<span class="interfaceComponent">
-				<a href="#" data-toggle="foleyRefreshTooltip" title="Refresh"><i class="fas fa-sync-alt" id="foleyRefreshButton"></i></a>
-
-				<a href="#" data-toggle="recordTooltip" title="Record"><i class="fas fa-circle"></i></a>
-
-				<span id="foleyAudioTrackSelect">
-					Track:
-					<select id="foleyAudioTrackOptions" size="1">
-					</select>
-				</span>
-
-				<div id="foleyBankSelect">
-					Bank:
-					<select id="foleyBankOptions" size="1">
-					</select>
-				</div>
-			</span>
-			<hr size="0.5" color="black">
+				Preset:
+				<select class="interfaceComponent" id="fullExportPreset">
+					<option value="1">Insider</option>
+					<option value="2">BIT</option>
+				</select>
+				
+			</div> -->
+			<!--
+			<div>
+				Review settings:
+				<select class="interfaceComponent" id="exportPreviewPreset">
+					<option value="1">16:9</option>
+					<option value="2">1:1</option>
+				</select>
+			</div>
+			<div>
+				Final settings:
+				<select class="interfaceComponent" id="exportHiResPreset">
+					<option value="WIDE">16:9</option>
+					<option value="SQUARE">1:1</option>
+					<option value="VERTICAL">9:16</option>
+				</select>
+			</div>-->
+			<hr class="hrPadding" size="0.5" color="black">
 		</div>
 
-
-		<div id="srtImporterControls">
+		<div class="app" id="srtImporterControls">
 			<div id="srtHolder">
 				<div id="srtDragBoxText">
 					Drag your SRT file into this gray box, or click
@@ -200,7 +212,7 @@
 		</div>
 
 
-		<div id="thumbExportControls">
+		<div class="app" id="thumbExportControls">
 			<form>
 				<span class=“thumbOptionsContainer”>
 					<input id="horizontalThumbPixels" type="text" name="horizontal" maxlength="4" value="540">
@@ -224,27 +236,18 @@
 		</div>
 
 
-		<div id="projectSetupControls">
-			<!--
-			<div class="form-Text">Sequences: </div>
-			<select id="initSequencesOptions">
-				<option value="Insider">Insider</option>
-				<option value="Insider">BI</option>
-				<option value="Insider">TI</option>
-			</select>
-			<input id="sequencesInitializeButton" type="submit" value="Initialize">
-			-->
-			<div>
-				<div class="form-Text">Transcode Clips:</div>
-			</div>
-		
+		<div class="app" id="transcodeControls">
+			<div class="form-Text">Selection:</div>
+			
 			<input class="interfaceComponent" id="convertSequenceContentsButton" type="submit" value="Convert">
 			<input class="interfaceComponent" id="replaceSequenceContentsButton" type="submit" value="Replace">
+			<input class="interfaceComponent" id="revertTranscodesToOriginalButton" type="submit" value="Revert to originals">
+
 			<hr class="hrPadding" size="0.5" color="black">
 		</div>
 
 
-		<div id="reframeClipsControls">
+		<div class="app" id="reframeClipsControls">
 			<span class="interfaceComponent">
 				<input id="reframeClipsButton" type="submit" value="Auto Scale">
 			</span>
@@ -265,7 +268,7 @@
 		</div>
 
 
-		<div id="reframeMOGRTControls">
+		<div class="app" id="reframeMOGRTControls">
 			<div>
 				<input id="reframeMOGRTJSXButton" type="submit" value="Auto Reframe">
 			</div>
@@ -293,7 +296,7 @@
 		</div>
 
 
-		<div id="scriptImporterControls">
+		<div class="app" id="scriptImporterControls">
 			<div id="csvHolder">
 				<div id="csvDragBoxText">
 					Drag your CSV file into this gray box, or click
@@ -340,7 +343,7 @@
 		<span id="hiddenText"></span>
 
 
-		<div id ="projectToolsControls">
+		<div class="app" id ="projectToolsControls">
 			
 			<input class="interfaceComponent" id="generateReportButton" type="submit" value="Generate Report"> 
 			<input class="interfaceComponent" id="clearCacheButton" type="submit" value="Clear Cache"> 
@@ -420,10 +423,31 @@
 			</div>
 			<hr class="hrPadding" size="0.5" color="black">
 		</div>
+
+		<div class="app" id="colorPalettesApp">
+			<div id="colorControls">
+				<span>Size</span>
+				<input class="colorControlsElement" id="sizeSlider" type="range" min="40" max="200" value="75">
+				<span>Labels</span>
+				<input class="colorControlsElement" id="showLabels" type="checkbox" checked>
+			</div>
+			<div id="colorsContainer"></div>
+			<div id="colorPresets">
+				Art, #111111, #FFFFFF, #007EFF Accent, #AEF7FF Accent, #5700D3 Base
+				Beauty, #111111, #FFFFFF, #007EFF, #5700D3 Accent, #A0F2B8 Accent, #FFF92E Base, #BAA4FF Base, #FFB0B0 Base
+				BI, #111111, #FFFFFF, #007EFF Accent, #F37D00 Accent, #00007C Base, #FFDC31 Secondary
+				Food, #FFFFFF, #111111, #007EFF, #E62828, #2EB8FF, #AEF7FF, #930000, #DB5E00, #FFB0B0, #BF005B, #E0B500, #FFF92E, #8D45FF, #00896A, #F15213
+				Insider, #FFFFFF, #111111, #E62828 Accent, #007EFF Base
+				SI, #111111, #FFFFFF, #33BA98 Accent, #FFDC31 Accent, #007EFF Base
+				TI, #FFFFFF, #111111, #F37D00 Accent, #007EFF Accent, #00007C Base, #33BA98 Secondary
+			</div>
+			<span><textarea name="" id="copiedColorText" cols="6" rows="1"></textarea></span>
+		</div>
+
 		<div id="helpBoxHolder">
 			<div class="interfaceComponent" id="helpBox"></div>
 		</div>
 		
 	</body>
-	<div id="panelVersion">2.13</vid>
+	<div id="panelVersion">3.0</vid>
 </html>

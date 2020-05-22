@@ -362,7 +362,7 @@ $(document).ready(function() {
         "Include text-on-screen MOGRTs from the script. Only works if you're part of the Insider Shared Library."
     )}, function(){hideHelp()});    
     $("#csvParser").hover(function () { showHelp(
-        'Creates a rough cut of your video from the uploaded script. All footage must be in a bin called "Media From Xchange" to work.'
+        'Creates a rough cut of your video from the uploaded script. All footage must be in a bin called "Media from Xchange" to work.'
     )}, function(){hideHelp()});    
 
     //PROJECT TOOLS
@@ -407,5 +407,38 @@ $(document).ready(function() {
     $("#addCommentsXMLHolder").hover(function () { showHelp(
         'Upload a Premiere CC XML file for this clip from the MAM. Ask Adrian if you need help getting the right file.'
     )}, function(){hideHelp()});
+
+    $("#fullExporterButton").hover(function () { showHelp(
+        "Export a review or final version of your video."
+    )}, function(){hideHelp()});
+    $("#exportHiResButton").hover(function () { showHelp(
+        'Sends a high-quality version of your video to Media Encoder. Its framerate and resolution will match your Sequence.'
+    )}, function(){hideHelp()});
+    $("#exportPreviewButton").hover(function () { showHelp(
+        'Sends a 360p version of your video to Media Encoder. Its framerate will match your Sequence.'
+    )}, function(){hideHelp()});
+
+    $("#colorPalettesButton").hover(function () { showHelp(
+        "Easily work with the color palettes for different Insider video teams."
+    )}, function(){hideHelp()});
+    // $(document).on('mouseover', '.groupLabel', showHelp(
+    //     'Click on a group name to expand or collapse its colors.'
+    // ));
+    // $(document).on('mouseout', '.groupLabel', hideHelp());
+    // $(document).on('mouseover', '.swatch', showHelp(
+    //     'When you click on a color swatch, its hex code will be copied to your clipboard. The next time you paste, it will be that color.'
+    // ));
+    // $(document).on('mouseout', '.swatch', hideHelp());
+    $("#sizeSlider").hover(function () { showHelp(
+        'Adjust the display size for color swatches.'
+    )}, function(){hideHelp()})
+    $("#showLabels").hover(function () { showHelp(
+        'Show or hide the hex color text over the color swatches.'
+    )}, function(){hideHelp()})
+
+    $(".fa-save").hover(function () { showHelp(
+        'Saves the currently open apps, and if possible, their settings.'
+    )}, function(){hideHelp()})
+
 
 });

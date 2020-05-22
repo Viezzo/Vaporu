@@ -1,7 +1,7 @@
 $(document).ready(function() {
-    $("#projectSetupButton").click(function(){
+    $("#transcodeButton").click(function(){
 
-        $("#projectSetupControls").slideToggle();
+        $("#transcodeControls").slideToggle();
         var originalColor = $(this).css("background-color");
         if (originalColor == "rgba(0, 0, 0, 0)"){
             $(this).animate({backgroundColor: "rgba(0, 0, 0, .3)"}, 300);
@@ -21,6 +21,11 @@ $(document).ready(function() {
     $("#replaceSequenceContentsButton").click(function(){
         var cs = new CSInterface;
         cs.evalScript('$.runScript.replaceTranscodes()');
+    });
+
+    $("#revertTranscodesToOriginalButton").click(function(){
+        var cs = new CSInterface;
+        cs.evalScript('$.runScript.revertTranscodes()');
     });
 
 });

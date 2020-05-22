@@ -15,6 +15,7 @@ hr {
 }
 
 input {
+  cursor: pointer;
   display: block;
   margin: auto;
   max-width: 100%;
@@ -46,6 +47,10 @@ select {
 
 #clickForLink {
   color: white;
+}
+
+#colorPalettesApp {
+  display: none;
 }
 
 #controls {
@@ -129,6 +134,10 @@ select {
   display: none;
 }
 
+#copiedColorText {
+  display: none;
+}
+
 #csvParser {
   float: left;
 }
@@ -157,6 +166,7 @@ select {
 
 #insider-logo {
   padding: 1px 0px 0px 0px;
+  cursor: pointer;
 }
 
 #panelVersion {
@@ -168,6 +178,7 @@ select {
 }
 
 #scaleToValue {
+  cursor: text;
   display: inline-block;
   margin: 0 auto;
   max-width: 30px;
@@ -196,7 +207,7 @@ select {
   text-align: left;
 }
 
-#projectSetupControls {
+#transcodeControls {
   display: none;
 }
 
@@ -212,8 +223,25 @@ select {
   display: none;
 }
 
+#fullExporterControls { 
+  display: none;
+}
+
+#fullExportSequenceName {
+  height: 3px !important;
+  padding-bottom: 6px;
+  padding-left: 3px;
+  width: 140px !important;
+}
+
 #csvUploadInput, #renameCsvUploadInput, #addCommentsXMLUploadInput {
   display: none;
+}
+
+#saveMessage {
+  position: absolute;
+  margin-left: 18px;
+  top: 23px;
 }
 
 #srtUploadInput {
@@ -233,6 +261,7 @@ select {
 }
 
 #horizontalThumbPixels {
+  cursor: text;
   display: inline-block;
   margin: 0 auto;
   max-width: 30px;
@@ -280,6 +309,7 @@ select {
 }
 
 #verticalThumbPixels {
+  cursor: text;
   display: inline-block;
   margin: 0 auto;
   max-width: 30px;
@@ -303,6 +333,11 @@ select {
   padding: 8px 0px 0px 0px;;
 }
 
+.colorControlsElement {
+  margin-top: 1px;
+  cursor: pointer;
+}
+
 .fa-cog {
   font-size: 16px;
   color: white;
@@ -321,11 +356,18 @@ select {
 .fa-exclamation-circle {
   font-size: 17px;
   color: #ff4000;
+  padding-right: 4px;
 }
 
 .fa-fa-th {
   font-size: 16px;
   color: white;
+}
+
+.fa-save {
+  cursor: pointer;
+  font-size: 15px;
+  padding-left: 9px;
 }
 
 .fa-sync-alt {
@@ -380,7 +422,7 @@ select {
 
 .hrPadding {
   width: 100%;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .hrMini {
@@ -408,9 +450,9 @@ select {
 }
 
 .column img {
-  margin-top: 8px;
+  margin-top: 0px;
   vertical-align: middle;
-  max-width: 60px;
+  max-width: 55px;
 }
 
 /* Responsive layout - makes a two column-layout instead of four columns */
@@ -427,4 +469,90 @@ select {
     flex: 100%;
     max-width: 100%;
   }
+}
+
+
+
+
+
+#clickForLink {
+  color: white;
+}
+
+#colorsContainer {
+  font-size: 15px;
+  text-align: left;
+}
+
+#colorControls {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+
+#copiedText {
+  display: none;
+}
+
+#colorPresets { 
+  display: none;
+}
+
+#sizeSlider {
+  max-width: 90px;
+  vertical-align: bottom;
+}
+
+.appButton {
+  cursor: pointer;
+  height: auto;
+  margin: -2px;
+}
+
+.colorControlsElement {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.labelContainer {
+  display: block;
+}
+
+.groupLabel {
+  cursor: pointer;
+  padding-right: 5px;
+}
+
+.plusMinusMessage {
+  font-size: 11px;
+  padding-left: 3px;
+}
+
+.swatch {
+  border-radius: 5px;
+  border-style: solid;
+  border-color: white;
+  border-width: 2px;
+  cursor: pointer;
+  display: inline-block;
+  height: 60px;
+  margin: 2px;
+  position: relative;
+  width: 75px;
+  vertical-align: middle;
+}
+
+.swatchCopyText {
+  bottom: 0;
+  display: none;
+  font-size: 10;
+  position: absolute;
+  text-align: bottom;
+  text-shadow: 1px 1px 3px black;
+}
+
+.swatchText {
+  font-size: 16;
+  display: block;
+  background: rgba(0, 0,0, 0.5);
 }

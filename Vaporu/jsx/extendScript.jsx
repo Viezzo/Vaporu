@@ -1,3 +1,6 @@
+#include "../lib/json2.js";
+
+
 transcodesObject = {
 	toReplace : []
 };
@@ -54,6 +57,90 @@ $.runScript = {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 	
+	getVaporuPresetPath: function() {
+		if (Folder.fs === 'Macintosh') {
+			return '/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/';
+		} else {
+			return '/c/Program%20Files%20(x86)/Common%20Files/Adobe/CEP/extensions/Vaporu/presets/';
+		}
+	},
+
+	getUserName: function() {
+		var homeDir	= new File('~/');
+		var userName = homeDir.displayName;
+		homeDir.close();
+		return userName;
+	},
+
+	getSep : function () {
+		if (Folder.fs === 'Macintosh') {
+			return '/';
+		} else {
+			return '\\';
+		}
+	},
+
+	readPreferences: function() {
+		var pathToPreferences = $.runScript.getPreferencesPath();
+		var theFile = File(pathToPreferences);
+		if (theFile.exists) {
+			if (theFile.fsName.indexOf('.json')) {
+				theFile.encoding = "UTF8";
+				theFile.open("r", "TEXT", "????");
+				var fileContents = theFile.read();
+				if (fileContents) {
+					return fileContents;
+				}
+				theFile.close();
+			}
+		}
+		else {
+			var theNewFile = new File(pathToPreferences);
+			if (theNewFile) {
+				 var theJSON = {
+					"openApps":[],
+					"segmentExporter": {"exportPreset": "HQ"},
+					"captionsReformat": {"addMarkers": false},
+					"thumbsExport": {"lock": false},
+					"fitToFrame": {"center": true, "scaleTo": 100},
+					"textToMOGRT": {"textToMogrtType": "TOS"},
+					"scriptImporter": {"courtesies": false, "tos": false},
+					"projectTools": {"displayHelp": true, "relinkWith":"1", "renameFrom": "1", "renameTo": "4", "addCommentsTo":"Clip"},
+					"colorPalettes": {"hiddenColorGroups":[], "size":75, "labels":true}
+				}
+				newFileContents = JSON.stringify(theJSON);
+				theNewFile.open("w");
+				theNewFile.encoding = "UTF-8";
+				theNewFile.writeln(newFileContents);
+				theNewFile.close();
+				return(newFileContents);
+			}
+		}
+	},
+
+	writePreferences: function(inputContents) {
+		var pathToPreferences = $.runScript.getPreferencesPath();
+		var outFile = File(pathToPreferences);
+		var newFileContents = JSON.stringify(inputContents)
+		if (outFile) {
+			if (outFile.fsName.indexOf('.json')) {
+				outFile.open("w");
+				outFile.encoding = "UTF-8";
+				outFile.writeln(newFileContents);
+				outFile.close();
+			}
+		} 
+	},
+
+	getPreferencesPath: function() {
+		if (Folder.fs === 'Macintosh') {
+			return '~/Library/Caches/CSXS/cep_cache/PPRO_' + app.version + '_com.AdrianTraviezo.Vaporu/preferences.json';
+		} else {
+			return 'C:\\Users\\' + $.runScript.getUserName() + '\\AppData\\Local\\Temp\\cep_cache\\PPRO_' + app.version + '_com.AdrianTraviezo.Vaporu\\preferences.json';
+		}
+	},
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------
 	clearCache: function () {
 		app.enableQE();
 		var MediaType_ANY = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF";
@@ -173,7 +260,7 @@ $.runScript = {
 		if (folder == "NULL")
 			outputPath = Folder.selectDialog("Choose the output directory.");
 		if (outputPath && typeof outputPath != "undefined"){
-			var outputFileName = outputPath.fsName + "/" + filename + '_from_Vaporu.' + extension.toLowerCase();
+			var outputFileName = outputPath.fsName + $.runScript.getSep() + filename + '_from_Vaporu.' + extension.toLowerCase();
 
 			var outFile = new File(outputFileName);
 			if (outFile) {
@@ -209,7 +296,7 @@ $.runScript = {
 			alert("No clips are selected for replacement.")
 			return 0;
 		}
-		var replacementPath = Folder.selectDialog("Choose the folder your transcodes are in.");
+		var replacementPath = Folder.selectDialog("Choose the folder your new files are in.");
 		if (replacementPath && replacementPath != "undefined"){
 			// to ensure that we don't repeatedly replace clips with the same projectItem
 			var replaceIDs = [];
@@ -271,7 +358,7 @@ $.runScript = {
 								var fileName = "businessinsider_" + theRecordID + "_" + suffix + "." + extension;
 
 								// create the fullReplacementPath variable, but modify it if this isn't a proxy.
-								var fullReplacementPath = replacementPath.fsName + '/' + fileName;
+								var fullReplacementPath = replacementPath.fsName + $.runScript.getSep() + fileName;
 								if (isProxy == false) {
 									var resultFileArray = replacementPath.getFiles(fileName);
 									if (typeof resultFileArray == "object" && resultFileArray.length == 1){
@@ -567,7 +654,7 @@ $.runScript = {
 								}
 								else if (theFile.name != newFilename) { // ONLY RENAME IF THE NEW NAME ISN'T THE SAME AS CURRENT FILE NAME
 									//rename file. temporarily link to a tiny mp4 included in the Vaporu directory, so that clips aren't registered by Premiere as offline
-									var tempFile = File("/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/tempMP4.mp4");
+									var tempFile = File($.runScript.getVaporuPresetPath() + "tempMP4.mp4");
 									if (tempFile.exists){
 										if (typeof newFilename != "undefined"){
 											if (!File(newFilename).exists){ // if a file with the new filename already exists, renaming will fail
@@ -727,11 +814,11 @@ $.runScript = {
 		else {
 			// check if Thumbnails folder exists
 			var outputPath;
-			if (Folder(app.project.path.split("/Projects/", 1) + "/Exports/Thumbnails/").exists){
-				outputPath = new Folder(app.project.path.split("/Projects/", 1) + "/Exports/Thumbnails/");
+			if (Folder(app.project.path.split($.runScript.getSep() + "Projects" + $.runScript.getSep(), 1) + $.runScript.getSep() + "Exports" + $.runScript.getSep() + "Thumbnails" + $.runScript.getSep()).exists){
+				outputPath = new Folder(app.project.path.split($.runScript.getSep() + "Projects" + $.runScript.getSep(), 1) + $.runScript.getSep() + "Exports" + $.runScript.getSep() + "Thumbnails" + $.runScript.getSep());
 			}
-			else if (Folder(app.project.path.split("/Projects/", 1) + "/Thumbnails/").exists){
-				outputPath = new Folder(app.project.path.split("/Projects/", 1) + "/Thumbnails/");
+			else if (Folder(app.project.path.split($.runScript.getSep() + "Projects" + $.runScript.getSep(), 1) + $.runScript.getSep() + "Thumbnails" + $.runScript.getSep()).exists){
+				outputPath = new Folder(app.project.path.split($.runScript.getSep() + "Projects" + $.runScript.getSep(), 1) + $.runScript.getSep() + "Thumbnails" + $.runScript.getSep());
 			}
 			else {
 				outputPath = Folder.selectDialog("Choose the output directory.");
@@ -903,7 +990,7 @@ $.runScript = {
 							//
 							newSeq.setPlayerPosition(thisTrack.clips[j].start.ticks);
 							var time = activeSequence.CTI.timecode;
-							var outputFileName	= outputPath.fsName + "/Thumb" + (j +1) + "_" + mainSeq.name;
+							var outputFileName	= outputPath.fsName + $.runScript.getSep() + "Thumb" + (j +1) + "_" + mainSeq.name;
 							//alert("it's " + outputFileName)
 							activeSequence.exportFrameJPEG(time, outputFileName);
 						}
@@ -1126,7 +1213,8 @@ $.runScript = {
 			var components = selection[0].getMGTComponent();
 			// get the value of each property in the MGT component and add it to array
 			if (components){
-				for (i = 1; i < components.properties.numItems; i++){
+				var color = components.properties.getParamForDisplayName("Matte Color");
+				for (i = 0; i < components.properties.numItems; i++){
 					copiedProperties.push( components.properties[i].getValue() );
 				}
 			}
@@ -1138,32 +1226,12 @@ $.runScript = {
 			alert("No MOGRTs selected.");
 		}
 		//stringify without the []
-		return copiedProperties.join(",");
+		return JSON.stringify(copiedProperties);
 	},
 
-	setMOGRTSettings: function (properties){
+	setMOGRTSettings: function (inputProperties){
 		var copiedProperties = [];
 		var mainSeq = app.project.activeSequence;
-		var propertiesTempArray = properties.join(',').split(',');
-		var propertiesArray = [];
-		// convert the property types from string to appropriate types, for later comparison
-		for (i = 0; i < properties.length; i++){
-			var finalValue;
-			if (properties[i] == "true"){
-				finalValue = true;
-			}
-			else if (properties[i] == "false"){
-				finalValue = false;
-			}
-			else if (!isNaN(properties[0])){
-				finalValue = parseInt(properties[i]);
-			}
-			else {
-				finalValue = properties[i];
-			}
-			propertiesArray.push(finalValue);
-		}
-		//alert(typeof propertiesArray + " and " + typeof properties);
 
 		var selection = mainSeq.getSelection();
 		for (i = 0; i < selection.length; i++){
@@ -1171,11 +1239,13 @@ $.runScript = {
 			if ( selection[i].isMGT() ){
 				var components = selection[i].getMGTComponent();
 				// only sync properties if it's the same mogrt type. For now, checking length
-				if (components.properties.numItems - 1 == properties.length){
-					for (j = 1; j < components.properties.numItems; j++){
-						if (typeof components.properties[j].getValue() == typeof propertiesArray[j -1]){
-							//alert(components.properties[j].getValue() + " : " + typeof components.properties[j].getValue() + " and " + propertiesArray[j -1] + " : " + typeof propertiesArray[j - 1]);
-							components.properties[j].setValue(propertiesArray[j - 1], 1);
+				//alert((components.properties.numItems - 1) + " and " + properties.length)
+				if (components.properties.numItems == inputProperties.length){
+					for (j = 0; j < components.properties.numItems; j++){
+						if (typeof components.properties[j].getValue() == typeof inputProperties[j]){
+							if (typeof inputProperties[j] != "string"){
+								components.properties[j].setValue(inputProperties[j], 1);
+							}
 						}
 					}
 				}
@@ -1190,7 +1260,7 @@ $.runScript = {
 		var outputPath = Folder.selectDialog("Choose the output directory.");
 		if (outputPath && typeof outputPath != "undefined"){
 			//var outputPath = new File("~/Desktop/Premiere%20tests");
-			var outputFileName = outputPath.fsName + "/" + filename + '_from_Vaporu.srt';
+			var outputFileName = outputPath.fsName + $.runScript.getSep() + filename + '_from_Vaporu.srt';
 
 			var outFile = new File(outputFileName);
 			if (outFile) {
@@ -1398,21 +1468,21 @@ $.runScript = {
 		if (mainSeqSettings.videoDisplayFormat == 110) {
 			if (selectedPresetOption && selectedPresetOption == "HQ"){
 				//outputPresetPath = "~/Documents/Adobe/Adobe%20Media%20Encoder/13.0/Presets/InsiderInc_WebVideoFormat_Vertical_23.976.epr";
-				outputPresetPath = "/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/InsiderInc_WebVideoFormat_Vertical_23.976.epr"
+				outputPresetPath = $.runScript.getVaporuPresetPath() + "InsiderInc_WebVideoFormat_Vertical_23.976.epr"
 			}
 			else {
 				//outputPresetPath = "~/Documents/Adobe/Adobe%20Media%20Encoder/13.0/Presets/InsiderInc_WebVideoFormat_Vertical_23.976_Fast.epr";
-				outputPresetPath = "/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/InsiderInc_WebVideoFormat_Vertical_23.976_Fast.epr"
+				outputPresetPath = $.runScript.getVaporuPresetPath() + "InsiderInc_WebVideoFormat_Vertical_23.976_Fast.epr"
 			}
 		}
 		else {
 			if (selectedPresetOption && selectedPresetOption == "HQ"){
 				//outputPresetPath = "~/Documents/Adobe/Adobe%20Media%20Encoder/13.0/Presets/InsiderInc_WebVideoFormat_Vertical.epr";
-				outputPresetPath = "/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/InsiderInc_WebVideoFormat_Vertical.epr"
+				outputPresetPath = $.runScript.getVaporuPresetPath() + "InsiderInc_WebVideoFormat_Vertical.epr"
 			}
 			else {
 				//outputPresetPath = "~/Documents/Adobe/Adobe%20Media%20Encoder/13.0/Presets/InsiderInc_WebVideoFormat_Vertical_Fast.epr";
-				outputPresetPath = "/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/InsiderInc_WebVideoFormat_Vertical_Fast.epr"
+				outputPresetPath = $.runScript.getVaporuPresetPath() + "InsiderInc_WebVideoFormat_Vertical_Fast.epr"
 			}
 		}
 
@@ -1421,7 +1491,7 @@ $.runScript = {
 			app.encoder.launchEncoder(); // launch encoder
 			// check if an "Exports" directory exists in this project's doler. If not, ask for output folder
 			var outputPath;
-			var checkPath = app.project.path.split("/Projects/", 1) + "/Exports";
+			var checkPath = app.project.path.split($.runScript.getSep() + "Projects" + $.runScript.getSep(), 1) + $.runScript.getSep() + "Exports";
 			if (Folder(checkPath).exists) {
 					outputPath = new Folder(checkPath);
 				}
@@ -1477,7 +1547,7 @@ $.runScript = {
 					if (outPreset.exists === true){
 						var outputFormatExtension = activeSequence.getExportFileExtension(outPreset.fsName);
 						if (outputFormatExtension) {
-							var fullPathToFile = outputPath.fsName + '/' + activeSequence.name + "_" + snap_number + "." + outputFormatExtension;
+							var fullPathToFile = outputPath.fsName + $.runScript.getSep() + activeSequence.name + "_" + snap_number + "." + outputFormatExtension;
 							var outFileTest = new File(fullPathToFile);
 							if (outFileTest.exists) {
 								if (firstExport) {
@@ -1498,6 +1568,98 @@ $.runScript = {
 			return destroyExisting;
 		}
 	},
+//--------------------------------------------------------------------------------------------------------------------------------------------------
+
+	fullExporter: function(selectedPresetOption) {
+		
+		app.enableQE();
+		
+		var mainSequence = app.project.activeSequence;
+		var bins = app.project.rootItem.children;
+		var numBins = app.project.rootItem.numChildren;
+		var firstBin = app.project.rootItem;
+
+		var outputPresetPath;
+		//choose framerate corresponding to sequence
+		var mainSeqSettings = mainSequence.getSettings();
+		if (selectedPresetOption == "PREVIEW"){ // preview video to export
+			var seqAR = "WIDE";
+			if (mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical == 1)
+				seqAR = "SQUARE";
+			if (mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical == 9/16) 
+				seqAR = "VERTICAL";
+
+			if (mainSeqSettings.videoDisplayFormat == 110) { //sequence is 23.976fps
+				outputPresetPath = $.runScript.getVaporuPresetPath() + "Vaporu_360p_Wide_24fps.epr" // go wide by default
+				if (seqAR == "SQUARE")
+					outputPresetPath = $.runScript.getVaporuPresetPath() + "Vaporu_360p_Square_24fps.epr"
+				if (seqAR == "VERTICAL")
+					outputPresetPath = $.runScript.getVaporuPresetPath() + "Vaporu_360p_Vertical_24fps.epr"
+			}
+			else { //sequence is 30 fps
+				outputPresetPath = $.runScript.getVaporuPresetPath() + "Vaporu_360p_Wide_30fps.epr" // go wide by default
+				if (seqAR == "SQUARE")
+					outputPresetPath = $.runScript.getVaporuPresetPath() + "Vaporu_360p_Square_30fps.epr"
+				if (seqAR == "VERTICAL")
+					outputPresetPath = $.runScript.getVaporuPresetPath() + "Vaporu_360p_Vertical_30fps.epr"
+			}
+		}
+		else // final video
+			outputPresetPath = $.runScript.getVaporuPresetPath() + "Vaporu_FullRes_MatchSource.epr"
+
+		//check whether the preset is in the folder
+		if (File(outputPresetPath).exists){
+			app.encoder.launchEncoder(); // launch encoder
+			// check if an "Exports" directory exists in this project's doler. If not, ask for output folder
+			var outputPath;
+			var checkPath = app.project.path.split($.runScript.getSep() + "Projects" + $.runScript.getSep(), 1) + $.runScript.getSep() + "Exports";
+			if (Folder(checkPath).exists) 
+				outputPath = new Folder(checkPath);
+			else 
+				outputPath = Folder.selectDialog("Choose the output directory.");
+			// go through each audio clip and export the video for it
+			var overWriteChoice = false;
+			if (outputPath){
+				app.encoder.launchEncoder();
+				renderActiveSeq(overWriteChoice)
+				app.encoder.startBatch();
+				alert("Sequence sent to Adobe Media Encoder.");
+			}
+		}
+		else 
+			alert("You don't have the right output preset installed! Contact Adrian Traviezo for help.");
+		// function from Premiere OnScript
+		function renderActiveSeq (overWriteChoice){
+			var destroyExisting = overWriteChoice;
+			var activeSequence = qe.project.getActiveSequence();
+			if (activeSequence) {
+				if (outputPath){
+					var outPreset = new File(outputPresetPath);
+					if (outPreset.exists === true){
+						var outputFormatExtension = activeSequence.getExportFileExtension(outPreset.fsName);
+						if (outputFormatExtension) {
+							var fullPathToFile = outputPath.fsName + $.runScript.getSep() + activeSequence.name + outputFormatExtension;
+							var outFileTest = new File(fullPathToFile);
+							if (outFileTest.exists) {
+								if (firstExport) {
+									destroyExisting = confirm('A file with the name " ' + activeSequence.name + ' already exists. Overwrite this and the other exports you selected?', false, 'Are you sure...?');
+								}
+								if (destroyExisting){
+									outFileTest.remove();
+									outFileTest.close();
+								}
+							}
+						}
+					}
+				}
+			}
+			// render 
+			app.encoder.encodeSequence(app.project.activeSequence, fullPathToFile, outPreset.fsName, app.encoder.ENCODE_IN_TO_OUT, 0);
+			outPreset.close ()
+			return destroyExisting;
+		}
+	},
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
 	gridInit: function() {
@@ -2062,7 +2224,7 @@ $.runScript = {
 	sequenceTranscode: function () {
 		//app.encoder.bind('onEncoderJobComplete', $.runscript.onEncoderJobComplete);
 		var mainSeq = app.project.activeSequence;
-		outputPresetPath = "/Library/Application%20Support/Adobe/CEP/extensions/Vaporu/presets/InsiderInc_MezzanineFormat_ProRes.epr";
+		outputPresetPath = $.runScript.getVaporuPresetPath() + "InsiderInc_MezzanineFormat_ProRes.epr";
 		if (File(outputPresetPath).exists){
 			app.encoder.launchEncoder(); // This can take a while; let's get the ball rolling.
 			var fileOutputPath = Folder.selectDialog("Choose the output directory");
@@ -2077,8 +2239,9 @@ $.runScript = {
 					if (thisClipItem) {
 						var clipName = thisClipItem.name;
 						// check for situations where this clip can't be converted
-						var lastIndex = clipName.lastIndexOf(".");
-						var extension = clipName.substr(lastIndex + 1);
+						var originalMediaPath = thisClipItem.getMediaPath();
+						var lastIndex = originalMediaPath.lastIndexOf(".");
+						var extension = (originalMediaPath.substr(lastIndex + 1)).replace(/\s/g, '');
 						if (!thisClipItem.canChangeMediaPath()){
 							if (errorIDs.indexOf(thisClipItem.nodeId) == -1){
 								errorMessage += clipName + ": Premiere won't let you replace this item.\n\n"
@@ -2093,7 +2256,12 @@ $.runScript = {
 						}
 						// else if this file is okay to be converted
 						else {
-							if (exportIDs.indexOf(thisClipItem.nodeId) == -1){
+							var foundIDIndex = -1;
+							for (id in exportIDs){
+								if (exportIDs[id] == thisClipItem.nodeId)
+									foundIDIndex = id;
+							}
+							if (foundIDIndex == -1){ // id doesn't exist here yet
 								var clipStart = thisClipItem.getInPoint();
 								var clipEnd = thisClipItem.getOutPoint();
 								// clear in and outs to ensure clip transcodes fully
@@ -2125,24 +2293,102 @@ $.runScript = {
 		}
 	},
 
-	replaceTranscodes: function () {
+	revertTranscodes: function () {
 		var mainSeq = app.project.activeSequence;
-
-		var vaporuBin = $.runScript.searchForBinWithName("Vaporu");
-		// choose the vaporu bin. if it doesn't exist, create it
-		if (!vaporuBin || typeof vaporuBin == "undefined"){
-			app.project.rootItem.createBin("Vaporu");
-			vaporuBin = $.runScript.searchForBinWithName("Vaporu");
-		}
-		// if failure to create, just import to root
-		if (!vaporuBin || typeof vaporuBin == "undefined"){
-			vaporuBin = app.project.rootItem;
-		}
-		vaporuBin.select();
 		var errorArray = [];
 		var selection = mainSeq.getSelection();
 		if (selection.length == 0) {
 			alert("No clips are selected for replacement.")
+			return 0;
+		}
+		// to ensure that we don't repeatedly replace clips with the same projectItem
+		var replaceIDs = [];
+		// go through each media to replace, then replace it.
+		for (var i = 0; i < selection.length; i ++) {
+			//ensure that we're selecting a video
+			if (selection[i].projectItem && selection[i].mediaType == "Video"){
+				var foundIDIndex = -1;
+				for (id in replaceIDs){
+					if (replaceIDs[id] == selection[i].projectItem.nodeId)
+						foundIDIndex = id;
+				}
+				if (foundIDIndex == -1){
+					//ensure the projectItem can be changed
+					if (selection[i].projectItem.canChangeMediaPath()){
+						var fullReplacementPath;
+						if (app.isDocumentOpen()) {
+							if (ExternalObject.AdobeXMPScript == undefined) {
+								ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+							}
+							if (ExternalObject.AdobeXMPScript != undefined) {
+								var projectMetadata = selection[i].projectItem.getProjectMetadata();
+								var xmp = new XMPMeta(projectMetadata);
+								fullReplacementPath = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "TranscodeOriginalPath"));
+							}
+						}
+						var errorMessage = "Original file doesn't exist. Maybe it was moved to another folder.";
+						if (typeof fullReplacementPath != "undefined"){
+							if (File(fullReplacementPath).exists){
+								// replace the clip with version in transcodes folder, then check its duration
+								var replaceSuccess = selection[i].projectItem.changeMediaPath(fullReplacementPath, true);
+								// changemediapath() returns 1 if successful, which is inconsistent with the documentation
+								if (!replaceSuccess && replaceSuccess == "undefined")
+									errorArray.push([selection[i].start.seconds, errorMessage]);
+							}
+							else 
+								errorArray.push([selection[i].start.seconds, errorMessage]);
+							// whether or not the projectItem was changed, refresh the projectItem
+							replaceIDs.push(selection[i].projectItem.nodeId);
+							selection[i].projectItem.refreshMedia();
+						}
+						else 
+							errorArray.push([selection[i].start.seconds, "Original path metadata wasn't set for this clip."]);
+					}
+					else
+						errorArray.push([selection[i].start.seconds, "Can't change media path for " + selection[i].name + "."]);
+				}
+			}
+		}
+		if (replaceIDs.length == 1)
+			alert("1 file reverted to its original.")
+		else 
+			alert(replaceIDs.length + " files reverted to their originals.")
+
+		for (i = 0; i < errorArray.length; i++){
+			// add new marker or append its comments to the previous one if it's also at time = 0, to avoid stacking markers
+			var newMarker;
+			var markerComments = "";
+			// if there's a previous marker, and if it's at time = 0, set selected marker to that one
+			var insertionTime = 0;
+			if (mainSeq.markers.numMarkers > 0 && mainSeq.markers.getLastMarker().end.seconds == errorArray[i][0]){
+				newMarker = mainSeq.markers.getLastMarker();
+				markerComments = newMarker.comments;
+			}
+			// otherwise, create a new one
+			else { 
+				newMarker = mainSeq.markers.createMarker(errorArray[i][0]);
+			}
+			newMarker.name = "Vaporu: Replace Clip Alert";
+			// add all comments to marker's previous comments
+			markerComments += errorArray[i][1];
+			newMarker.comments = markerComments;
+			newMarker.type = "Chapter";
+		}
+	},
+
+		replaceTranscodes: function () {
+		var mainSeq = app.project.activeSequence;
+		var errorArray = [];
+		var selection = mainSeq.getSelection();
+		if (selection.length == 0) {
+			alert("No clips are selected for replacement.")
+			return 0;
+		}
+		// create original path metadata field in this project
+		var OGpathCreated = $.runScript.createCustomMetadata("TranscodeOriginalPath", "TranscodeOriginalPath", 2);
+		if (!OGpathCreated){ // if creating the metadata failed, immediately stop this function. Won't happen if it was already created
+			alert("Could not initialize replace function.")
+			return 0;
 		}
 		var replacementPath = Folder.selectDialog("Choose the folder your transcodes are in.");
 		if (replacementPath && replacementPath != "undefined"){
@@ -2152,52 +2398,29 @@ $.runScript = {
 			for (var i = 0; i < selection.length; i ++) {
 				//ensure that we're selecting a video
 				if (selection[i].projectItem && selection[i].mediaType == "Video"){
-					if (replaceIDs.indexOf(selection[i].projectItem.nodeId) == -1){
+					var foundIDIndex = -1;
+					for (id in replaceIDs){
+						if (replaceIDs[id] == selection[i].projectItem.nodeId)
+							foundIDIndex = id;
+					}
+					if (foundIDIndex == -1){
 						//ensure the projectItem can be changed
 						if (selection[i].projectItem.canChangeMediaPath()){
-							var fullReplacementPath = replacementPath.fsName + '/' + selection[i].projectItem.name + ".mov";
-							var errorMessage = "Transcoded file " + fullReplacementPath + " either doesn't exist or hasn't finished transcoding. Check Adobe Media Encoder to see whether it's in the queue.";
-							if (File(fullReplacementPath).exists){
-								var originalMediaPath = selection[i].projectItem.getMediaPath();
-								// get original duration
-								var OGClipDuration = 0;
-								if (app.isDocumentOpen()) {
-									if (ExternalObject.AdobeXMPScript == undefined) {
-										ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
-									}
-									if (ExternalObject.AdobeXMPScript != undefined) {
-										var projectMetadata = selection[i].projectItem.getProjectMetadata();
-										var xmp = new XMPMeta(projectMetadata);
-										OGClipDuration = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoDuration")).toString().replace(/\D/g,'');
-									}
-								}
-
-								// replace the clip with version in transcodes folder, then check its duration
-								var replaceSuccess = selection[i].projectItem.changeMediaPath(fullReplacementPath, true);
-								var newClipDuration = 0;
-								if (app.isDocumentOpen()) {
-									if (ExternalObject.AdobeXMPScript == undefined) {
-										ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
-									}
-									if (ExternalObject.AdobeXMPScript != undefined) {
-										var projectMetadata = selection[i].projectItem.getProjectMetadata();
-										var xmp = new XMPMeta(projectMetadata);
-										newClipDuration = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoDuration")).toString().replace(/\D/g,'');
-									}
-								}
-
-								// if the new and old durations don't match, replace new clip with the old one again
-								if ( newClipDuration != OGClipDuration){
-									replaceSuccess = false;
-									if (selection[i].projectItem.canChangeMediaPath()){
-										selection[i].projectItem.changeMediaPath(originalMediaPath, true);
-									}
-									errorMessage = "The replacement for " + selection[i].projectItem.name + " doesn't match the original clip's duration. Make sure your filenames match and there are no duplicates.";
-								}
-
-								// changemediapath() returns 1 if successful, which is inconsistent with the documentation
-								if (replaceSuccess && replaceSuccess != "undefined"){
-									// set its log note
+							// BEFORE DOING ANYTHING, ADD THE ORIGINAL FILE PATH TO CLIP ITEM'S METADATA
+							var originalMediaPath = selection[i].projectItem.getMediaPath();
+							setOGpath = $.runScript.setMetadataValue(selection[i].projectItem, "TranscodeOriginalPath", originalMediaPath);
+							if (File(originalMediaPath).exists) {
+								nameWithoutExtension = File(originalMediaPath).displayName;
+								var lastIndex = nameWithoutExtension.lastIndexOf(".");
+								if (lastIndex > -1)
+									nameWithoutExtension = (nameWithoutExtension.substr(0, lastIndex)).replace(/\s/g, '');
+								
+								var fullReplacementPath = replacementPath.fsName + $.runScript.getSep() + nameWithoutExtension + ".mov";
+								var errorMessage = "Transcoded file " + fullReplacementPath + " either doesn't exist or hasn't finished transcoding. Check Adobe Media Encoder to see whether it's in the queue.";
+								if (File(fullReplacementPath).exists){
+									var originalMediaPath = selection[i].projectItem.getMediaPath();
+									// get original duration
+									var OGClipDuration = 0;
 									if (app.isDocumentOpen()) {
 										if (ExternalObject.AdobeXMPScript == undefined) {
 											ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
@@ -2205,31 +2428,70 @@ $.runScript = {
 										if (ExternalObject.AdobeXMPScript != undefined) {
 											var projectMetadata = selection[i].projectItem.getProjectMetadata();
 											var xmp = new XMPMeta(projectMetadata);
-											// set the XMP log note to nothing
-											xmp.setProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.LogNote", "Replaced by Vaporu. Original path: " + originalMediaPath);
-											var str = xmp.serialize();
-											var array = new Array();
-											array[0] = "Column.Intrinsic.LogNote";
+											OGClipDuration = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoDuration")).toString().replace(/\D/g,'');
+										}
+									}
 
-											var setLogNoteFailed = selection[i].projectItem.setProjectMetadata(xmp.serialize(), ["Column.Intrinsic.LogNote"]);
-											// if setting log note failed
-											if (setLogNoteFailed){
-												errorMessage = "Log note couldn't be set for " + selection[i].projectItem.name + ". Make sure Xchange doesn't already think the clip is archived.";
-												errorArray.push([selection[i].start.seconds, errorMessage]);
+									// replace the clip with version in transcodes folder, then check its duration
+									var replaceSuccess = selection[i].projectItem.changeMediaPath(fullReplacementPath, true);
+									var newClipDuration = 0;
+									if (app.isDocumentOpen()) {
+										if (ExternalObject.AdobeXMPScript == undefined) {
+											ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+										}
+										if (ExternalObject.AdobeXMPScript != undefined) {
+											var projectMetadata = selection[i].projectItem.getProjectMetadata();
+											var xmp = new XMPMeta(projectMetadata);
+											newClipDuration = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.VideoDuration")).toString().replace(/\D/g,'');
+										}
+									}
+
+									// if the new and old durations don't match, replace new clip with the old one again
+									if ( newClipDuration != OGClipDuration){
+										replaceSuccess = false;
+										if (selection[i].projectItem.canChangeMediaPath()){
+											selection[i].projectItem.changeMediaPath(originalMediaPath, true);
+										}
+										errorMessage = "The replacement for " + selection[i].projectItem.name + " doesn't match the original clip's duration. Make sure your filenames match and there are no duplicates.";
+									}
+
+									// changemediapath() returns 1 if successful, which is inconsistent with the documentation
+									if (replaceSuccess && replaceSuccess != "undefined"){
+										// set its log note
+										if (app.isDocumentOpen()) {
+											if (ExternalObject.AdobeXMPScript == undefined) {
+												ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+											}
+											if (ExternalObject.AdobeXMPScript != undefined) {
+												var projectMetadata = selection[i].projectItem.getProjectMetadata();
+												var xmp = new XMPMeta(projectMetadata);
+												// set the XMP log note to nothing
+												xmp.setProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.LogNote", "Replaced by Vaporu. Original path: " + originalMediaPath);
+												var str = xmp.serialize();
+												var array = new Array();
+												array[0] = "Column.Intrinsic.LogNote";
+
+												var setLogNoteFailed = selection[i].projectItem.setProjectMetadata(xmp.serialize(), ["Column.Intrinsic.LogNote"]);
+												// if setting log note failed
+												if (setLogNoteFailed){
+													errorMessage = "Log note couldn't be set for " + selection[i].projectItem.name + ". Make sure Xchange doesn't already think the clip is archived.";
+													errorArray.push([selection[i].start.seconds, errorMessage]);
+												}
 											}
 										}
 									}
+									else {
+										errorArray.push([selection[i].start.seconds, errorMessage]);
+									}
+									// whether or not the projectItem was changed, refresh the projectItem
+									replaceIDs.push(selection[i].projectItem.nodeId);
+									selection[i].projectItem.refreshMedia();
 								}
-								else {
+								else 
 									errorArray.push([selection[i].start.seconds, errorMessage]);
-								}
-								// whether or not the projectItem was changed, refresh the projectItem
-								replaceIDs.push(selection[i].projectItem.nodeId);
-								selection[i].projectItem.refreshMedia();
 							}
-							else {
-								errorArray.push([selection[i].start.seconds, errorMessage]);
-							}
+							else 
+								errorArray.push([selection[i].start.seconds, "Failed to parse name for this video."]);
 						}
 						else {
 							errorMessage = "Can't change media path for " + selection[i].name + ".";
@@ -2313,13 +2575,20 @@ $.runScript = {
 				if (outPreset.exists === true){
 					var outputFormatExtension = activeSequence.getExportFileExtension(outPreset.fsName);
 					if (outputFormatExtension) {
-						var fullPathToFile = outputPath.fsName + '/' + projectItem.name + "." + outputFormatExtension;
-						var outFileTest = new File(fullPathToFile);
-						if (outFileTest.exists) {
-							destroyExisting = confirm('A file with the name "' + projectItem.name + '" already exists. Overwrite it?', false, 'Are you sure...?');
-							if (destroyExisting){
-								outFileTest.remove();
-								outFileTest.close();
+						var originalMediaFile = File(projectItem.getMediaPath());
+						if (originalMediaFile.exists) {
+							nameWithoutExtension = originalMediaFile.displayName;
+							var lastIndex = nameWithoutExtension.lastIndexOf(".");
+							if (lastIndex > -1)
+								nameWithoutExtension = (nameWithoutExtension.substr(0, lastIndex)).replace(/\s/g, '');
+							var fullPathToFile = outputPath.fsName + $.runScript.getSep() + nameWithoutExtension + "." + outputFormatExtension;
+							var outFileTest = new File(fullPathToFile);
+							if (outFileTest.exists) {
+								destroyExisting = confirm('A file with the name "' + nameWithoutExtension + '" already exists. Overwrite it?', false, 'Are you sure...?');
+								if (destroyExisting){
+									outFileTest.remove();
+									outFileTest.close();
+								}
 							}
 						}
 					}

@@ -65,7 +65,8 @@ $(document).ready(function() {
         var cs = new CSInterface;
         cs.evalScript('$.runScript.getMOGRTSettings()', function(returnString){
             try {
-                var propertiesArray = returnString.split(',');
+                //var propertiesArray = returnString.split(',');
+                var propertiesArray = JSON.parse(returnString);
                 window.copiedSettings.properties = propertiesArray;
             }
             catch (error) {
@@ -77,6 +78,7 @@ $(document).ready(function() {
     $("#pasteMOGRTPropertiesButton").click(function(){
         
         var cs = new CSInterface;
+        //alert(window.copiedSettings.properties.length)
         cs.evalScript('$.runScript.setMOGRTSettings(' + JSON.stringify(window.copiedSettings.properties) + ')', function(returnString){
             try {
                 
