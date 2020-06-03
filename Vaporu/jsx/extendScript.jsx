@@ -1638,12 +1638,10 @@ $.runScript = {
 					if (outPreset.exists === true){
 						var outputFormatExtension = activeSequence.getExportFileExtension(outPreset.fsName);
 						if (outputFormatExtension) {
-							var fullPathToFile = outputPath.fsName + $.runScript.getSep() + activeSequence.name + outputFormatExtension;
+							var fullPathToFile = outputPath.fsName + $.runScript.getSep() + activeSequence.name + "." + outputFormatExtension;
 							var outFileTest = new File(fullPathToFile);
 							if (outFileTest.exists) {
-								if (firstExport) {
-									destroyExisting = confirm('A file with the name " ' + activeSequence.name + ' already exists. Overwrite this and the other exports you selected?', false, 'Are you sure...?');
-								}
+								destroyExisting = confirm('A file with the name " ' + activeSequence.name + ' already exists. Overwrite this and the other exports you selected?', false, 'Are you sure...?');
 								if (destroyExisting){
 									outFileTest.remove();
 									outFileTest.close();
