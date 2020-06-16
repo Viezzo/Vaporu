@@ -12,10 +12,6 @@ buildSequenceObject = {
 
 $.runScript = {
 
-	updateEventPanel : function (message) {
-		app.setSDKEventMessage(message, 'warning');
-	},
-
 	countSegments: function(selectedAudioTrack) {
 		var mainSequence = app.project.activeSequence;
 		if (mainSequence && typeof mainSequence != "undefined")
@@ -233,17 +229,9 @@ $.runScript = {
 						thisCodec = "OFFLINE"; 
 						thisClipEntry = thisClip.name;
 					}
-					var theIDIndex = -1;
-					for (y = 0; y < IDArray.length; y++){
-						if (IDArray[y] == thisClip.nodeId)
-							theIDIndex = IDArray[y];
-					}
+					var theIDIndex = IDArray.indexOf(thisClip.nodeId)
 					if (theIDIndex == -1) { // this clip hasn't been processed yet.
-						var theIndex =  -1;
-						for (z = 0; z < infoArray.length; z++){
-							if (infoArray[z] == thisCodec)
-								theIndex = infoArray[z];
-						}
+						var theIndex = infoArray.indexOf(thisCodec);
 						if (theIndex > -1){ //IF WE ALREADY HAVE THIS CODEC, ADD THIS TO THE LIST
 							var theClipNames = clipArray[theIndex];
 							theClipNames += "\n    - " + thisClipEntry;
@@ -258,7 +246,6 @@ $.runScript = {
 				}
 			}
 		}
-
 		for (i = 0; i < infoArray.length; i++){
 			numberOfClips = clipArray[i].split("\n").length;
 			finalString += "\r\n\r\n" + numberOfClips + " clips of type " + infoArray[i] + ".\r\n" + clipArray[i] + "\r\n";
@@ -318,13 +305,7 @@ $.runScript = {
 				//ensure that we're selecting a video
 				var clipItem = selection[i].projectItem;
 				if (typeof clipItem != "undefined" && selection[i].mediaType == "Video"){
-					var foundClipNodeID = false;
-					for (z = 0; z < replaceIDs.length; z++){
-						if (replaceIDs[z] == clipItem.nodeId)
-							foundClipNodeID = true;
-					}
-
-					if (foundClipNodeID == false){
+					if (replaceIDs.indexOf(clipItem.nodeId) == -1){
 						//ensure the projectItem can be changed
 						if (clipItem.canChangeMediaPath()){
 							var logNote;
@@ -549,13 +530,7 @@ $.runScript = {
 				var clipItem = selection[i].projectItem;				
 				if (typeof clipItem != "undefined" && selection[i].mediaType == "Video"){ //ensure that we're selecting a video
 					confirmedVideos++;
-					var foundClipNodeID = false;
-					for (z = 0; z < replaceIDs.length; z++){
-						if (replaceIDs[z] == clipItem.nodeId)
-							foundClipNodeID = true;
-					}
-
-					if (foundClipNodeID == false){
+					if (replaceIDs.indexOf(clipItem.nodeId) == -1){
 						//ensure the projectItem can be changed
 						if (clipItem.canChangeMediaPath()){
 							var originalMediaPath = clipItem.getMediaPath();
@@ -670,8 +645,8 @@ $.runScript = {
 								}
 								if (renameClipsOnly){ // user is renaming clip in Premiere, not the actual file
 									if (typeof newFilename != "undefined"){ // if new name set, rename clip in the bin AND on the timeline
-										clipItem.name = newFilename.toString();
-										selection[i].name = newFilename.toString();
+										clipItem.name = newFilename;
+										selection[i].name = newFilename;
 										replaceIDs.push(clipItem.nodeId);
 									}
 									else
@@ -693,7 +668,7 @@ $.runScript = {
 														var replaceSuccess = clipItem.changeMediaPath(fullReplacementPath, true);
 														// changemediapath() returns 1 if successful, which is inconsistent with the documentation
 														if (typeof replaceSuccess != "undefined" && replaceSuccess){
-															selection[i].name = newFilename.toString();
+															selection[i].name = newFilename;
 															replaceIDs.push(clipItem.nodeId);
 														}
 														else {
@@ -766,10 +741,6 @@ $.runScript = {
 	addCommentsXML: function(xmlInput, addToTimeline) {
 		app.enableQE();
 		var mainSequence = app.project.activeSequence;
-		var version = "14.01";
-		var versionArray = app.version.split(".");
-		if (versionArray.length > 1)
-			version = versionArray[0] + "." + versionArray[1];
 
 		var markersObject;
 		var insertOffset = 0;
@@ -793,7 +764,7 @@ $.runScript = {
 				var markersObject = clipItem.getMarkers();
 		}
 
-		if (typeof markersObject != 'undefined') { // we got the markers object
+		if (markersObject) { // we got the markers object
 			var xmlObj = new XML(xmlInput);
 			if (!xmlObj.project.children.clip || typeof xmlObj.project.children.clip == "undefined"){
 				alert("Invalid XML file. Ask Adrian for help if you need it.")
@@ -807,30 +778,20 @@ $.runScript = {
 			var markers = xmlObj.project.children.clip.marker;
 
 			if (typeof framerate != 'undefined' && framerate > 0){ // valid framerate
-				if (markers && typeof markers != 'undefined'){
+				if (markers &&  typeof markers != 'undefined'){
 					for (markerIndex in markers){
 						var thisMarker = markers[markerIndex];
 						var secondsIn = (thisMarker.in / framerate) + insertOffset;
 						var secondsOut = thisMarker.out > thisMarker.in ? (thisMarker.out / framerate) + insertOffset : secondsIn;
-						
 						var commentName = thisMarker.name;
 						var comments = thisMarker.comment;
-						if (secondsIn && secondsOut && typeof commentName != undefined && typeof comments != undefined) {
-							if (parseFloat(version) > 14.0) { // Premiere 2020
-								// DO SOMETHING HERE
-								var newMarker = markersObject.createMarker(parseFloat(secondsIn));
-								//var guid = new_marker.guid;
-								newMarker.name = commentName.toString();
-								newMarker.comments = comments.toString();
-								newMarker.end = parseFloat(secondsOut);
-							}
-							else {
-								var newMarker = markersObject.createMarker(secondsIn);
-								//var guid = new_marker.guid;
-								newMarker.name = commentName;
-								newMarker.comments = comments;
-								newMarker.end = secondsOut;
-							}
+
+						if (secondsIn && secondsOut && commentName && comments) {
+							var newMarker = markersObject.createMarker(secondsIn);
+							//var guid = new_marker.guid;
+							newMarker.name = commentName;
+							newMarker.comments = comments;
+							newMarker.end = secondsOut;
 						}
 					}
 				}
@@ -845,11 +806,6 @@ $.runScript = {
 
 		var mainSeq = app.project.activeSequence;
 		var clipsArray = mainSeq.getSelection();
-
-		var version = "14.01";
-		var versionArray = app.version.split(".");
-		if (versionArray.length > 1)
-			version = versionArray[0] + "." + versionArray[1];
 
 		if (clipsArray.length < 1) {
 			alert ("No clips selected for thumbnails!");
@@ -887,11 +843,11 @@ $.runScript = {
 				vaporuBin = $.runScript.searchForBinWithName("Vaporu");
 				vaporuBin.select();
 			}
-
 			
 			//create and open subsequence
 			var newSeq = mainSeq.createSubsequence(true);
 			var seqIdentifier = 1;
+			
 			// looks like extendscript doesn't have "startsWith()" so...
 			for (var i = 0; i < vaporuBin.children.numItems; i++) {
 				var binChild = vaporuBin.children[i].name;
@@ -907,11 +863,7 @@ $.runScript = {
 				}
 			}
 			newSeq.name = "Thumbs_" + seqIdentifier;
-			if (parseFloat(version) > 14.0) { // Premiere 2020
-				newSeq.setZeroPoint('0');
-			}
-			else
-				newSeq.setZeroPoint(0);
+			newSeq.setZeroPoint(0);
 
 			// get everything that was selected
 			var selectedTrackAndClipNumbers = [];
@@ -931,6 +883,7 @@ $.runScript = {
 				trackNumber++;
 				clipNumber = 0;
 			}
+
 			var deletionArray = [];
 			// delete everything that wasn't selected in the initial sequence
 			for (var i = 0; i < selectedTrackAndClipNumbers.length; i ++) {
@@ -961,54 +914,40 @@ $.runScript = {
 
 				// nest each clip further to ensure its scale, but only if it's not the same frame
 				var sceneStart = [];
-
 				for (var i = 0; i < newSeq.videoTracks.numTracks; i++) {
 					var thisTrack = newSeq.videoTracks[i];
 					// then through each clip in that track
 					for (var j = 0; j < thisTrack.clips.numItems; j++) {
 						var thisSubClip = thisTrack.clips[j];
+						//alert(thisSubClip.name + " at " + thisSubClip.start.seconds + " and j = " + j + " on track " + i + " which has " + thisTrack.clips.numItems)
 						var subClipInpoint = thisSubClip.start.ticks;
-						var clipAlreadyAdded = false;
-						for (var z = 0; z < sceneStart.length; z++) {
-							if (sceneStart[z] == subClipInpoint)
-								clipAlreadyAdded = true;
-						}
-
 						// only nest clip if it's not the same scene as a previous nest
-						if (!clipAlreadyAdded){
+						if (sceneStart.indexOf(subClipInpoint) == -1){
 							//alert("1 scenestarts length:" + sceneStart.length);
 							sceneStart.push(subClipInpoint);
 							var subClipOutpoint = thisSubClip.end.ticks;
+						
 							newSeq.setInPoint(subClipInpoint);
 							newSeq.setOutPoint(subClipOutpoint);
 							var clipName = thisSubClip.name;
 							var newSubSeq = newSeq.createSubsequence(true);
 							newSubSeq.name = "Nested_thumb_" + seqIdentifier + "_" + clipName;
-
-							if (parseFloat(version) > 14.0) { // Premiere 2020
-								newSubSeq.setZeroPoint('0');
-							}
-							else
-								newSubSeq.setZeroPoint(0);
+							newSubSeq.setZeroPoint(0);
 							var newSubSeqSettings = newSubSeq.getSettings();
 							if (newSubSeqSettings && typeof newSubSeqSettings != "undefined"){
 								newSubSeqSettings.videoFrameWidth = originalSeqWidth;
 								newSubSeqSettings.videoFrameHeight = originalSeqHeight;
 								newSubSeq.setSettings(newSubSeqSettings);
 							}
-
-							if (parseFloat(version) <= 14.0) { // Premiere 2020
-								// set nested clips to start at 0, if they're close enough (sometimes premiere adds a blank frame)
-								for (var k = 0; k < newSubSeq.videoTracks.numTracks; k++) {
-									for (var l = 0; l < newSubSeq.videoTracks[k].clips.numItems; l++) {
+							// // set nested clips to start at 0, if they're close enough (sometimes premiere adds a blank frame)
+							for (var k = 0; k < newSubSeq.videoTracks.numTracks; k++) {
+								for (var l = 0; l < newSubSeq.videoTracks[k].clips.numItems; l++) {
+									newSubSeq.videoTracks[k].clips[l].start = 0;
+									if (parseInt(newSubSeq.videoTracks[k].clips[l].start) && parseInt(newSubSeq.videoTracks[k].clips[l].start) < 0.5) {
 										newSubSeq.videoTracks[k].clips[l].start = 0;
-										if (parseInt(newSubSeq.videoTracks[k].clips[l].start) && parseInt(newSubSeq.videoTracks[k].clips[l].start) < 0.5) {
-											newSubSeq.videoTracks[k].clips[l].start = 0;
-										}
 									}
 								}
 							}
-							
 							subSequencesToInsert.push(newSubSeq.projectItem);
 						}
 					}
@@ -1019,7 +958,7 @@ $.runScript = {
 					// then through each clip in that track
 					for (var j = 0; j < thisTrack.clips.numItems; j++) {
 						// select clip
-						thisTrack.clips[j].setSelected(1,1);
+						thisTrack.clips[j].setSelected(true);
 					}
 				}
 				// remove all selected clips
@@ -1027,6 +966,7 @@ $.runScript = {
 				for (var i = 0; i < newSeqClips.length; i++) {
 					newSeqClips[i].remove(1, 1)
 				}
+
 				// add the nested subsequences to the original nested sequence
 				for (var i = 0; i < subSequencesToInsert.length; i++) {
 					var theTime = 0;
@@ -1109,6 +1049,7 @@ $.runScript = {
 		}
 	},
 
+
 	fitAllToSeq: function (centerChecked){
 		var mainSeq = app.project.activeSequence;
 		var hPixels = 0;
@@ -1156,20 +1097,9 @@ $.runScript = {
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-		convertToMOGRT: function (selectedTrack, mogrtType) {
+	convertToMOGRT: function (selectedTrack, mogrtType) {
 		var mainSeq = app.project.activeSequence;
 
-		var version = "14.01";
-		var versionArray = app.version.split(".");
-		if (versionArray.length > 1)
-			version = versionArray[0] + "." + versionArray[1];
-
-		if (parseFloat(version) > 14.0) { // Premiere 2020
-			alert('This feature is unsupported in your version of Premiere.')
-			return 0;
-		}
-		
 		if (!selectedTrack || selectedTrack > mainSeq.videoTracks.numTracks){
 			selectedTrack = mainSeq.videoTracks.numTracks;
 		}
@@ -1178,83 +1108,55 @@ $.runScript = {
 		for (var i = 0; i < selection.length; i++) {
 			// find the text inside of the selected clip (selection[i])
 			for (var j = 0; j < selection[i].components.numItems; j++) {
+				var sourceText; 
 				var originalText = selection[i];
 
 				if (originalText.components[j].displayName == "Text"){
-					// // check version
-					// var version = "14.01";
-					// var versionArray = app.version.split(".");
-					// if (versionArray.length > 1)
-					// 	version = versionArray[0] + "." + versionArray[1];
+					// assign source text, which is properties[0] for a text component, to var
+					sourceText = originalText.components[j].properties[0];
+				}
+				if (sourceText){
+					var copiedText = sourceText.getValue();
+					var amountOfmTextProperties = copiedText.split("mText\":\"").length;
+					// parse the value of the source text by removing the beginning and end
+					if (amountOfmTextProperties > 1){
 
-					// if (parseFloat(version) > 14.0) { // Premiere 2020
-					// 	// var sourceText = originalText.components[j].properties[0];
-					// 	// var jsonVal = originalText.components[j].properties[0].getValue();
-					// 	// var jsonObjPart = jsonVal.substring(0, 4);
-					// 	// var jsonObj = JSON.parse(jsonVal.substring(4));
-					// 	// jsonObj.mTextParam.mStyleSheet.mText;
-					// 	// var jsonOutstr = JSON.stringify(jsonObj);
-					// 	// alert(jsonOutstr)
+						//alert("1" + copiedText)
+						copiedText = copiedText.split("mText\":\"")[amountOfmTextProperties - 1];
+						//alert("2" + copiedText)
+						copiedText = copiedText.split("\",\"mTracking")[0];
+						//alert("3" + copiedText)
+						var newClipStartTime = originalText.start;
+						var newClipEndTime = originalText.end;
 
-					// 	// var jsonOutstr = jsonObjPart + jsonOutstr;
-					// 	// //seq.videoTracks[0].clips[0].components[2].properties.getParamForDisplayName("Source Text").setValue(jsonOutstr, true);
-						
-					// 	// if (typeof sourceText != 'undefined'){
-					// 	// 	var copiedText = sourceText.getValue();
-					// 	// 	if (copiedText == 'undefined')
-					// 	// 		alert('undefined')
-					// 	// 	else
-					// 	// 		$.runScript.saveFile('test', copiedText, "txt", "NULL")
-					// 	// }
-						
-					// 	//$.runScript.insertCourtesy2020(newClipStartTime, newClipEndTime, copiedText, selectedTrack - 1);
-					// 	//var copiedText = sourceText.displayName();
-					// 	//alert(copiedText)
-					// }
-					var sourceText = originalText.components[j].properties[0];
-					if (sourceText){
-						var copiedText = sourceText.getValue();
-						var amountOfmTextProperties = copiedText.split("mText\":\"").length;
-						// parse the value of the source text by removing the beginning and end
-						if (amountOfmTextProperties > 1){
-
-							//alert("1" + copiedText)
-							copiedText = copiedText.split("mText\":\"")[amountOfmTextProperties - 1];
-							//alert("2" + copiedText)
-							copiedText = copiedText.split("\",\"mTracking")[0];
-							//alert("3" + copiedText)
-							var newClipStartTime = originalText.start;
-							var newClipEndTime = originalText.end;
-
-							if (mogrtType == "TOS") {
-								// set the line length to what it was before
-								var longestLineLength = 0;
-								var textLines = copiedText.split("\\r");
-								formattedText = "";
-								// find the length of the longest line, to split
-								for (k = 0; k < textLines.length; k++){
-									//get rid of returns in the text
-									formattedText += textLines[k] + " ";
-									if (textLines[k].length > longestLineLength){
-										longestLineLength = textLines[k].length + 0.5;
-									}
-									//alert(textLines[k] + " is long: " + textLines[k].length);
+						if (mogrtType == "TOS") {
+							// set the line length to what it was before
+							var longestLineLength = 0;
+							var textLines = copiedText.split("\\r");
+							formattedText = "";
+							// find the length of the longest line, to split
+							for (k = 0; k < textLines.length; k++){
+								//get rid of returns in the text
+								formattedText += textLines[k] + " ";
+								if (textLines[k].length > longestLineLength){
+									longestLineLength = textLines[k].length + 0.5;
 								}
-								// get rid of double spaces
-								formattedText = formattedText.replace("  ", " ");
-								// insert the TOS and set its max length to the original text's length
-								var newMOGRT = $.runScript.insertTOS(newClipStartTime, newClipEndTime, formattedText, selectedTrack - 1);
-								if (newMOGRT){
-									// set all social media types off
-									var components = newMOGRT.getMGTComponent();
-									components.properties.getParamForDisplayName("Max Line Length").setValue(longestLineLength, 1);
-								}
+								//alert(textLines[k] + " is long: " + textLines[k].length);
 							}
-							else 
-								$.runScript.insertCourtesy(newClipStartTime, newClipEndTime, copiedText, selectedTrack - 1);
+							// get rid of double spaces
+							formattedText = formattedText.replace("  ", " ");
+							// insert the TOS and set its max length to the original text's length
+							var newMOGRT = $.runScript.insertTOS(newClipStartTime, newClipEndTime, formattedText, selectedTrack - 1);
+							if (newMOGRT){
+								// set all social media types off
+								var components = newMOGRT.getMGTComponent();
+								components.properties.getParamForDisplayName("Max Line Length").setValue(longestLineLength, 1);
+							}
+						}
+						else {
+							$.runScript.insertCourtesy(newClipStartTime, newClipEndTime, copiedText, selectedTrack - 1);
 						}
 					}
-					
 				}
 			}
 		}
@@ -1266,14 +1168,16 @@ $.runScript = {
 		var components = thisClip.getMGTComponent();
 		var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
 		var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
-
-		if (typeof mogrtAR != "undefined"){
-			if (seqAR == 16/9)
+		if (mogrtAR && typeof mogrtAR != "undefined"){
+			if (seqAR == 16/9){
 				mogrtAR.setValue(1, 1);
-			if (seqAR == 1)
+			}
+			if (seqAR == 1){
 				mogrtAR.setValue(2, 1);
-			else if (seqAR == 9/16) 
+			}
+			else if (seqAR == 9/16) {
 				mogrtAR.setValue(3, 1);
+			}
 		}
 	},
 
@@ -1286,11 +1190,14 @@ $.runScript = {
 		if (seqSettings && typeof seqSettings != "undefined"){
 			hPixels = seqSettings.videoFrameWidth;
 			vPixels = seqSettings.videoFrameHeight;
+
 			var selection = mainSeq.getSelection();
-			if (parseInt(hPixels) > 0 && parseInt(vPixels) > 0) { // if we successfully got the sequence size
+			if (hPixels > 0 && vPixels > 0) { // if we successfully got the sequence size
+			//alert(selection.length " clips selected");
 				for (j = 0; j < selection.length; j++){
-					if (selection[j].isMGT())
-						$.runScript.fitMOGRTToSeq(selection[j], parseInt(hPixels), parseInt(vPixels));
+					if (selection[j].isMGT()){
+						$.runScript.fitMOGRTToSeq(selection[j], hPixels, vPixels);
+					}
 				}
 			}
 		}
@@ -1306,14 +1213,15 @@ $.runScript = {
 			var components = selection[0].getMGTComponent();
 			// get the value of each property in the MGT component and add it to array
 			if (components){
-				var color = components.properties.getParamForDisplayName("Matte Color");
 				for (i = 0; i < components.properties.numItems; i++){
-					var val = components.properties[i].getValue();
-					if (components.properties[i].displayName.lastIndexOf("Color") > -1) {
+					var thePropertyValue = components.properties[i].getValue();
+					//alert(components.properties[i].displayName)
+					if (components.properties[i].displayName.indexOf("Color") > -1) {
 						// if this is a color value, get its RGB instead of int value
-						val = components.properties[i].getColorValue();
+						//alert(components.properties[i].displayName)
+						thePropertyValue = components.properties[i].getColorValue();
 					}
-					copiedProperties.push(val);
+					copiedProperties.push(thePropertyValue);
 				}
 			}
 			else {
@@ -1324,36 +1232,44 @@ $.runScript = {
 			alert("No MOGRTs selected.");
 		}
 		//stringify without the []
+		//alert(copiedProperties.length)
 		return JSON.stringify(copiedProperties);
 	},
 
 	setMOGRTSettings: function (inputProperties){
-		var copiedProperties = [];
-		var mainSeq = app.project.activeSequence;
-		var selection = mainSeq.getSelection();
-		for (i = 0; i < selection.length; i++){
-			// for every selected MOGRT
-			if ( selection[i].isMGT() ){
-				var components = selection[i].getMGTComponent();
-				// only sync properties if it's the same mogrt type. For now, checking length
-				//alert((components.properties.numItems - 1) + " and " + properties.length)
-				if (components.properties.numItems == inputProperties.length){
-					for (j = 0; j < components.properties.numItems; j++){
-						if (typeof components.properties[j].getValue() == typeof inputProperties[j]){
-							if (typeof inputProperties[j] != "string")
-								components.properties[j].setValue(inputProperties[j], 1);
-						}
-						else { // color values are set differently
-							if (components.properties[j].displayName.lastIndexOf("Color") > -1) {
-								var rgb = inputProperties[j].join().split(',');
-								if (rgb.length == 4)
-									components.properties[j].setColorValue(parseInt(rgb[0]), parseInt(rgb[1]), parseInt(rgb[2]), parseInt(rgb[3]), true);
-							}
-						}
-					}
-				}
-			}
-		}
+		alert("input")
+		alert(inputProperties)
+		// var copiedProperties = [];
+		// 		alert(JSON.parse(inputProperties))
+
+		// alert("a")
+		// var mainSeq = app.project.activeSequence;
+		// var selection = mainSeq.getSelection();
+
+		// for (i = 0; i < selection.length; i++){
+		// 	// for every selected MOGRT
+		// 	if ( selection[i].isMGT() ){
+		// 		var components = selection[i].getMGTComponent();
+		// 		// only sync properties if it's the same mogrt type. For now, checking length
+		// 			alert(components.properties.numItems)
+			
+		// 		if (components.properties.numItems == inputProperties.length){
+		// 			for (j = 0; j < components.properties.numItems; j++){
+		// 				//alert(components.properties[j].displayName + " and " + typeof components.properties[j].getValue() + " and " + typeof inputProperties[j])
+		// 				if (typeof components.properties[j].getValue() == typeof inputProperties[j]){
+		// 					if (typeof inputProperties[j] != "string")
+		// 						components.properties[j].setValue(inputProperties[j], 1);
+		// 				}
+		// 				// else if (typeof components.properties[j].getValue() == 'number' && typeof inputProperties[j] == 'object'){
+		// 				// 	//alert(components.properties[j].displayName + " and " + inputProperties[j])
+		// 				// 	if (components.properties[j].displayName.indexOf("Color") > -1){  // if this is a color value, get its RGB instead of int value
+		// 				// 		components.properties[j].setColorValue(inputProperties[j], 1);
+		// 				// 	}
+		// 				// }
+		// 			}
+		// 		}
+		// 	}
+		// }
 	},
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1415,21 +1331,13 @@ $.runScript = {
 			alert("Track " + trackNumber + " doesn't exist in this sequence.")
 			return 0;
 		}
-
-		//check for version
-		var version = "14.01";
-		var versionArray = app.version.split(".");
-		if (versionArray.length > 1)
-			version = versionArray[0] + "." + versionArray[1];
+		
 		// ensure these are arrays
 		if (typeof textArray == "object" && typeof startTimecodesArray == "object" && typeof endTimecodesArray == "object"){
 			for (var i = 0; i < textArray.length; i++){
 				var isFirstCaption = i == 0 ? true : false;
 				if (confirmContinue) {
-					if (parseFloat(version) > 14.0)
-						confirmContinue = $.runScript.insertCaption2020(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
-					else
-						confirmContinue = $.runScript.insertCaption(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
+					confirmContinue = $.runScript.insertCaption(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
 					//alert(confirmContinue)
 					if (typeof widthArray == "object" && includeMarkers == true){
 						if (parseInt(widthArray[i]) > 150){
@@ -1443,7 +1351,6 @@ $.runScript = {
 					}
 				}
 			}
-			alert("All captions imported!")
 		}
 	},
 
@@ -1881,12 +1788,11 @@ $.runScript = {
 	//--------------------------------------------------------------------------------------------------------------------------------------------------
 
 	insertVisual: function(visualOriginal, startTime, endTime, theText, courtesy, mode2, mode3) {
+		
 		app.enableQE();
 		
 		var mainSequence = app.project.activeSequence;
 		var videoTrack = mainSequence.videoTracks[0];
-		var startSeconds;
-		var endSeconds;
 		mediaBin = searchForBinWithName("Media from Xchange");
 		if (!mediaBin || typeof mediaBin == "undefined"){
 			mediaBin = app.project.rootItem;
@@ -1958,8 +1864,8 @@ $.runScript = {
 				}
 			}
 			else {
-				startSeconds = timecodeToSeconds(startTime);
-				endSeconds = timecodeToSeconds(endTime);
+				var startSeconds = timecodeToSeconds(startTime);
+				var endSeconds = timecodeToSeconds(endTime);
 				// check that start and end times are valid
 				if (typeof startSeconds != "undefined" && typeof endSeconds != "undefined"){
 					// add clip to the beginning of timeline, starting from last clip
@@ -1979,39 +1885,18 @@ $.runScript = {
 			}
 			if (continueInsert){
 				//insert
-				var version = "14.01";
-				var versionArray = app.version.split(".");
-				if (versionArray.length > 1)
-					version = versionArray[0] + "." + versionArray[1];
-
-				//alert(buildSequenceObject.latestEnd)
 				videoTrack.insertClip(visualClip, insertionTime);
-				// alert(videoTrack.clips.numItems)
-				var lastClipIndex = videoTrack.clips.numItems;				
+				var lastClipIndex = videoTrack.clips.numItems;
 				if (lastClipIndex > 0){
 					lastClipIndex = lastClipIndex - 1;
 					buildSequenceObject.latestStart = videoTrack.clips[lastClipIndex].start;
 					buildSequenceObject.latestEnd = videoTrack.clips[lastClipIndex].end;
 				}
-
-				// var lastClipEndObject = videoTrack.clips[lastClipIndex].end;
-				// var lastClipStartObject = videoTrack.clips[lastClipIndex].start;
-				// var thisClipEndSeconds = lastClipEndObject.seconds - lastClipStartObject.seconds;
-				var newEndTime = visualClip.getOutPoint().seconds - visualClip.getInPoint().seconds;
-				if (mode2 == "true"){
-					if (parseFloat(version) > 14.0)
-						$.runScript.insertCourtesy2020(insertionTime, newEndTime, courtesy, 3);
-					else
-						$.runScript.insertCourtesy(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, courtesy, 3);
+				if (mode2 == "true")
+					$.runScript.insertCourtesy(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, courtesy, 3);
+				if (mode3 == "true")
+					$.runScript.insertTOS(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, theText, 1);
 				}
-				if (mode3 == "true"){
-					if (parseFloat(version) > 14.0){
-						$.runScript.insertTOS2020(insertionTime, newEndTime, theText, 1);
-					}
-					else
-						$.runScript.insertTOS(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, theText, 1);
-				}
-			}
 		}
 
 		else {
@@ -2097,113 +1982,42 @@ $.runScript = {
 	},
 
 	insertTOS: function (insertTime, endTime, TOSText, vidTrack) {
-		app.enableQE();
-	
-		var mainSequence = app.project.activeSequence;
-		var vTrack = mainSequence.videoTracks[2];
-		var aTrack = mainSequence.audioTracks[0];
+			app.enableQE();
+		
+			var mainSequence = app.project.activeSequence;
+			var vTrack = mainSequence.videoTracks[2];
+			var aTrack = mainSequence.audioTracks[0];
 
-		// if NULLTEXT, don't add it 
-		if (TOSText != "NULLTEXT"){
-			var formattedInsertionTime = 0;
-			if (insertTime != 0){
-				formattedInsertionTime = insertTime.seconds
-			}
-			var newMOGRT = mainSequence.importMGTFromLibrary("Insider", "TOS", formattedInsertionTime, vidTrack, 1);
-			if (newMOGRT){// cut at end time of the clip below
-				newMOGRT.end = endTime;
-				newMOGRT.setSelected(true);
-				if (newMOGRT){
-					// set all social media types off
-					var components = newMOGRT.getMGTComponent();
-					components.properties.getParamForDisplayName("Text").setValue(TOSText);
-					//set to square version if that's the sequence
-					var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
-					var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
-					if (mogrtAR && typeof mogrtAR != "undefined"){
-						if (seqAR == 1){
-							mogrtAR.setValue(2);
-						}
-						else if (seqAR == 9/16) {
-							mogrtAR.setValue(3);
-						}
-					}
-					return newMOGRT;
+			// if NULLTEXT, don't add it 
+			if (TOSText != "NULLTEXT"){
+				var formattedInsertionTime = 0;
+				if (insertTime != 0){
+					formattedInsertionTime = insertTime.seconds
 				}
-			}
-		}
-	},
-	insertTOS2020: function (insertTime, endTime, TOSText, vidTrack) {
-		if (TOSText == "NULLTEXT")
-			return 0;
-		app.enableQE();
-		var mainSequence = app.project.activeSequence;
-		// if NULLTEXT, don't add it 
-		if (TOSText && typeof TOSText != "undefined"){
-			var TOSProjectItem;
-			var newMOGRT;
-			// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
-			app.project.rootItem.select();
-			// check to see if the Captions MOGRT already exists 
-			var MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "TOS_2020"){
-						TOSProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				// mogrt bin exists but the Captions .aegraphic doesn't
-				if (!TOSProjectItem || typeof TOSProjectItem == "undefined"){
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "TOS_2020", parseFloat(insertTime), vidTrack, 1);
-				}
-			}
-			// choose the mogrt bin. if it doesn't exist, create it
-			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "TOS_2020", parseFloat(insertTime), vidTrack, 1);
-				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			}
-			// if after adding the MOGRT, we now have the mogrt bin
-			if (typeof MOGRTBin != "undefined"){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "TOS_2020"){
-						TOSProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
-					newMOGRT.remove(false,true);
-				// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
-				if (TOSProjectItem && typeof TOSProjectItem != "undefined"){
-					var newTime = new Time();
-					newTime.seconds = endTime; // for AE 2020, use a Time object, not seconds
-					TOSProjectItem.setOutPoint(newTime, 1);
-					var vidTrackItem = mainSequence.videoTracks[vidTrack];
-					var originalNumberOfClips = vidTrackItem.clips.numItems;
-					vidTrackItem.overwriteClip(TOSProjectItem, insertTime);
-					newMOGRT = vidTrackItem.clips[originalNumberOfClips];
-
-					if (newMOGRT && newMOGRT != "undefined"){
-						//newMOGRT.setSelected(1,1);
+				var newMOGRT = mainSequence.importMGTFromLibrary("Insider", "TOS", formattedInsertionTime, vidTrack, 1);
+				if (newMOGRT){// cut at end time of the clip below
+					newMOGRT.end = endTime;
+					newMOGRT.setSelected(true);
+					if (newMOGRT){
+						// set all social media types off
 						var components = newMOGRT.getMGTComponent();
-						var formattedText = $.runScript.AETOSParse(TOSText);
-						components.properties.getParamForDisplayName("Text").setValue(formattedText, 1);
+						components.properties.getParamForDisplayName("Text").setValue(TOSText);
 						//set to square version if that's the sequence
 						var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
 						var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
-						if (seqAR == 1)
-							mogrtAR.setValue(2);
-						else if (seqAR == 9/16) 
-							mogrtAR.setValue(3);
+						if (mogrtAR && typeof mogrtAR != "undefined"){
+							if (seqAR == 1){
+								mogrtAR.setValue(2);
+							}
+							else if (seqAR == 9/16) {
+								mogrtAR.setValue(3);
+							}
+						}
+						return newMOGRT;
 					}
 				}
-				else
-					alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
 			}
-		}
-	},
+		},
 
 	insertCourtesy: function (insertTime, endTime, courtesyText, vidTrack){
 		app.enableQE();
@@ -2276,300 +2090,100 @@ $.runScript = {
 		}
 	},
 
-	insertCourtesy2020: function (insertTime, endTime, TOSText, vidTrack) {
-		if (TOSText == "NULLCOURTESY")
-			return 0;
-		app.enableQE();
-		var mainSequence = app.project.activeSequence;
-		// if NULLTEXT, don't add it 
-		if (TOSText && typeof TOSText != "undefined"){
-			var TOSProjectItem;
-			var newMOGRT;
-			// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
-			app.project.rootItem.select();
-			// check to see if the Captions MOGRT already exists 
-			var MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Courtesy"){
-						TOSProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				// mogrt bin exists but the Captions .aegraphic doesn't
-				if (!TOSProjectItem || typeof TOSProjectItem == "undefined"){
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Courtesy", parseFloat(insertTime), vidTrack, 1);
-				}
-			}
-			// choose the mogrt bin. if it doesn't exist, create it
-			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Courtesy", parseFloat(insertTime), vidTrack, 1);
-				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			}
-			// if after adding the MOGRT, we now have the mogrt bin
-			if (typeof MOGRTBin != "undefined"){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Courtesy"){
-						TOSProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
-					newMOGRT.remove(false,true);
-				// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
-				if (TOSProjectItem && typeof TOSProjectItem != "undefined"){
-					var newTime = new Time();
-					newTime.seconds = endTime; // for AE 2020, use a Time object, not seconds
-					TOSProjectItem.setOutPoint(newTime, 1);
-					var vidTrackItem = mainSequence.videoTracks[vidTrack];
-					var originalNumberOfClips = vidTrackItem.clips.numItems;
-					vidTrackItem.overwriteClip(TOSProjectItem, insertTime);
-					newMOGRT = vidTrackItem.clips[originalNumberOfClips];
-
-					if (newMOGRT && newMOGRT != "undefined"){
-						//newMOGRT.setSelected(1,1);
-						var components = newMOGRT.getMGTComponent();
-						for (var i = 2; i < 6; i++) {
-							//alert(i);
-							components.properties[i].setValue(0, 1);
-						}
-						// parse the input for type 
-						var courtesyElements = (TOSText.split(")")[0]).split("(");
-						if (courtesyElements && courtesyElements.length == 2){
-							var logoIndex;
-							var logoType = courtesyElements[1].toLowerCase();
-							//alert(" courtesy: " + courtesyText + " courtesyElements: " + courtesyElements[1] + " char: " + logoType.charAt(0));
-							if (logoType.charAt(0) == "i"){
-									logoIndex = 2;
-							}
-							if (logoType.charAt(0) == "y"){
-									logoIndex = 3;
-							}
-							if (logoType.charAt(0) == "f"){
-									logoIndex = 4;
-							}
-							if (logoType.charAt(0) == "t"){
-									logoIndex = 5;
-							}
-							if (logoType.charAt(0) == "s"){
-									logoIndex = 6;
-							}
-							//components.properties[logoIndex].setValue(true);
-							components.properties[logoIndex].setValue(true, 1);
-							// set the courtesy text
-							components.properties.getParamForDisplayName("Courtesy Text").setValue(TOSText, 1);
-						}
-						else 
-							components.properties.getParamForDisplayName("Courtesy Text").setValue(TOSText, 1);
-
-						//set to square version if that's the sequence
-						var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
-						var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
-						if (seqAR == 1)
-							mogrtAR.setValue(2);
-						else if (seqAR == 9/16) 
-							mogrtAR.setValue(3);
-					}
-				}
-				else
-					alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
-			}
-		}
-	},
-
 	insertCaption: function (insertTime, endTime, captionText, vidTrack, isFirstCaption) {
-		app.enableQE();
-		var mainSequence = app.project.activeSequence;
-		var confirmDelete = false;
+			app.enableQE();
+			var mainSequence = app.project.activeSequence;
+			var confirmDelete = false;
 
-		// if NULLTEXT, don't add it 
-		if (captionText && typeof captionText != "undefined"){
-			var captionProjectItem;
-			var newMOGRT;
+			// if NULLTEXT, don't add it 
+			if (captionText && typeof captionText != "undefined"){
+				var captionProjectItem;
+				var newMOGRT;
 
-			// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
-			app.project.rootItem.select();
-			// check to see if the Captions MOGRT already exists 
-			var MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption"){
-						captionProjectItem = MOGRTBin.children[i];
-						break;
+				// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
+				app.project.rootItem.select();
+				// check to see if the Captions MOGRT already exists 
+				var MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
+				if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
+					// go through the mogrt bin and find the Caption 
+					for (i = 0; i < MOGRTBin.children.numItems; i++) {
+						if (MOGRTBin.children[i].name == "Caption"){
+							captionProjectItem = MOGRTBin.children[i];
+							break;
+						}
+					}
+					// mogrt bin exists but the Captions .aegraphic doesn't
+					if (!captionProjectItem || typeof captionProjectItem == "undefined"){
+						newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption", parseFloat(insertTime), vidTrack, 1);
 					}
 				}
-				// mogrt bin exists but the Captions .aegraphic doesn't
-				if (!captionProjectItem || typeof captionProjectItem == "undefined"){
+				// choose the mogrt bin. if it doesn't exist, create it
+				if (!MOGRTBin || typeof MOGRTBin == "undefined"){
 					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption", parseFloat(insertTime), vidTrack, 1);
+					MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 				}
-			}
-			// choose the mogrt bin. if it doesn't exist, create it
-			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption", parseFloat(insertTime), vidTrack, 1);
-				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			}
-			// if after adding the MOGRT, we now have the mogrt bin
-			if (typeof MOGRTBin != "undefined"){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption"){
-						captionProjectItem = MOGRTBin.children[i];
-						break;
+				// if after adding the MOGRT, we now have the mogrt bin
+				if (typeof MOGRTBin != "undefined"){
+					// go through the mogrt bin and find the Caption 
+					for (i = 0; i < MOGRTBin.children.numItems; i++) {
+						if (MOGRTBin.children[i].name == "Caption"){
+							captionProjectItem = MOGRTBin.children[i];
+							break;
+						}
 					}
-				}
-				if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
-					newMOGRT.remove(false,true);
-				// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
-				if (captionProjectItem && typeof captionProjectItem != "undefined"){
-					captionProjectItem.setInPoint(0);
-					captionProjectItem.setOutPoint(parseFloat(endTime) - parseFloat(insertTime));
-					var vidTrackItem = mainSequence.videoTracks[vidTrack];
-					//delete everything on the top track, then insert captions
-					if (isFirstCaption){
-						//alert("first caption and" + vidTrackItem.clips.numItems) 
-						if (vidTrackItem.clips.numItems != 0){
-							confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
-							if (confirmDelete){
-								while (vidTrackItem.clips.numItems > 0){
-									vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
+					if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
+						newMOGRT.remove(false,true);
+					// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
+					if (captionProjectItem && typeof captionProjectItem != "undefined"){
+						captionProjectItem.setInPoint(0);
+						captionProjectItem.setOutPoint(parseFloat(endTime) - parseFloat(insertTime));
+						var vidTrackItem = mainSequence.videoTracks[vidTrack];
+						//delete everything on the top track, then insert captions
+						if (isFirstCaption){
+							//alert("first caption and" + vidTrackItem.clips.numItems) 
+							if (vidTrackItem.clips.numItems != 0){
+								confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
+								if (confirmDelete){
+									while (vidTrackItem.clips.numItems > 0){
+										vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
+									}
 								}
+								else // user decided to not proceed with insertion
+									return 0
 							}
-							else // user decided to not proceed with insertion
-								return 0
+							else
+								confirmDelete = true;
 						}
 						else
 							confirmDelete = true;
-					}
-					else
-						confirmDelete = true;
-						
-					if (confirmDelete == true) {
-						var originalNumberOfClips = vidTrackItem.clips.numItems;
-						vidTrackItem.insertClip(captionProjectItem, parseFloat(insertTime));
-						newMOGRT = vidTrackItem.clips[originalNumberOfClips];
+							
+						if (confirmDelete == true) {
+							var originalNumberOfClips = vidTrackItem.clips.numItems;
+							vidTrackItem.insertClip(captionProjectItem, parseFloat(insertTime));
+							newMOGRT = vidTrackItem.clips[originalNumberOfClips];
 
-						if (newMOGRT && newMOGRT != "undefined"){
-							newMOGRT.setSelected(1,1);
-							var components = newMOGRT.getMGTComponent();
-							components.properties.getParamForDisplayName("Text").setValue(captionText, 1);
-							//set to square version if that's the sequence
-							var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
-							var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
-							if (seqAR == 1)
-								mogrtAR.setValue(2);
-							else if (seqAR == 9/16) 
-								mogrtAR.setValue(3);
-						}
-					}
-				}
-				else{
-					alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
-					confirmDelete = false;
-				}
-			}
-		}
-		return confirmDelete;
-	},
-
-	insertCaption2020: function (insertTime, endTime, captionText, vidTrack, isFirstCaption) {
-		app.enableQE();
-		var mainSequence = app.project.activeSequence;
-		var confirmDelete = false;
-
-		// if NULLTEXT, don't add it 
-		if (captionText && typeof captionText != "undefined"){
-			var captionProjectItem;
-			var newMOGRT;
-
-			// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
-			app.project.rootItem.select();
-			// check to see if the Captions MOGRT already exists 
-			var MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption_2020"){
-						captionProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				// mogrt bin exists but the Captions .aegraphic doesn't
-				if (!captionProjectItem || typeof captionProjectItem == "undefined")
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
-			}
-			// choose the mogrt bin. if it doesn't exist, create it
-			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
-				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			}
-			// if after adding the MOGRT, we now have the mogrt bin
-			if (typeof MOGRTBin != "undefined"){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption_2020"){
-						captionProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
-					newMOGRT.remove(false,true);
-				// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
-				if (captionProjectItem && typeof captionProjectItem != "undefined"){
-					var vidTrackItem = mainSequence.videoTracks[vidTrack];
-					//delete everything on the top track, then insert captions
-					if (isFirstCaption){
-						//alert("first caption and" + vidTrackItem.clips.numItems) 
-						if (vidTrackItem.clips.numItems != 0){
-							confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
-							if (confirmDelete){
-								while (vidTrackItem.clips.numItems > 0){
-									vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
-								}
+							if (newMOGRT && newMOGRT != "undefined"){
+								newMOGRT.setSelected(true);
+								var components = newMOGRT.getMGTComponent();
+								components.properties.getParamForDisplayName("Text").setValue(captionText, 1);
+								//set to square version if that's the sequence
+								var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
+								var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
+								if (seqAR == 1)
+									mogrtAR.setValue(2);
+								else if (seqAR == 9/16) 
+									mogrtAR.setValue(3);
 							}
-							else // user decided to not proceed with insertion
-								return 0
-						}
-						else
-							confirmDelete = true;
-					}
-					else
-						confirmDelete = true;
-						
-					if (confirmDelete == true) {
-						var newTime = new Time();
-						newTime.seconds = endTime - insertTime; // for AE 2020, use a Time object, not seconds
-						captionProjectItem.setOutPoint(newTime, 1);
-
-						var originalNumberOfClips = vidTrackItem.clips.numItems;
-						vidTrackItem.insertClip(captionProjectItem, parseFloat(insertTime));
-						newMOGRT = vidTrackItem.clips[originalNumberOfClips];
-
-						if (newMOGRT && newMOGRT != "undefined"){
-							//newMOGRT.setSelected(1,1);
-							var formattedCaptionText = $.runScript.AECaptionParse(captionText);
-							var components = newMOGRT.getMGTComponent();
-							components.properties.getParamForDisplayName("Text").setValue(formattedCaptionText, 1);
-							//set to square version if that's the sequence
-							var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
-							var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
-							if (seqAR == 1)
-								mogrtAR.setValue(2);
-							else if (seqAR == 9/16) 
-								mogrtAR.setValue(3);
 						}
 					}
-				}
-				else{
-					alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
-					confirmDelete = false;
+					else{
+						alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
+						confirmDelete = false;
+					}
 				}
 			}
-		}
-		return confirmDelete;
-	},
+			return confirmDelete;
+		},
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -2665,35 +2279,16 @@ $.runScript = {
 									foundIDIndex = id;
 							}
 							if (foundIDIndex == -1){ // id doesn't exist here yet
-								var version = "14.01";
-								var versionArray = app.version.split(".");
-								if (versionArray.length > 1)
-									version = versionArray[0] + "." + versionArray[1];
-
-								if (parseFloat(version) > 14.0) { // Premiere 2020
-									var clipStart = thisClipItem.getInPoint();
-									var clipEnd = thisClipItem.getOutPoint();
-									// clear in and outs to ensure clip transcodes fully
-									thisClipItem.clearInPoint();
-									thisClipItem.clearOutPoint();
-									$.runScript.transcodeProjectItem(thisClipItem, outputPresetPath, fileOutputPath);
-									// then reset the ins and outs
-									thisClipItem.setInPoint(clipStart, 1);
-									thisClipItem.setOutPoint(clipEnd, 1);
-									exportIDs.push(thisClipItem.nodeId);
-								}
-								else {
-									var clipStart = thisClipItem.getInPoint();
-									var clipEnd = thisClipItem.getOutPoint();
-									// clear in and outs to ensure clip transcodes fully
-									thisClipItem.clearInPoint();
-									thisClipItem.clearOutPoint();
-									$.runScript.transcodeProjectItem(thisClipItem, outputPresetPath, fileOutputPath);
-									// then reset the ins and outs
-									thisClipItem.setInPoint(clipStart);
-									thisClipItem.setOutPoint(clipEnd);
-									exportIDs.push(thisClipItem.nodeId);
-								}
+								var clipStart = thisClipItem.getInPoint();
+								var clipEnd = thisClipItem.getOutPoint();
+								// clear in and outs to ensure clip transcodes fully
+								thisClipItem.clearInPoint();
+								thisClipItem.clearOutPoint();
+								$.runScript.transcodeProjectItem(thisClipItem, outputPresetPath, fileOutputPath);
+								// then reset the ins and outs
+								thisClipItem.setInPoint(clipStart);
+								thisClipItem.setOutPoint(clipEnd);
+								exportIDs.push(thisClipItem.nodeId);
 							}
 						}
 					}
@@ -2718,11 +2313,6 @@ $.runScript = {
 	revertTranscodes: function () {
 		var mainSeq = app.project.activeSequence;
 		var errorArray = [];
-		var version = "14.01";
-		var versionArray = app.version.split(".");
-		if (versionArray.length > 1)
-			version = versionArray[0] + "." + versionArray[1];
-
 		var selection = mainSeq.getSelection();
 		if (selection.length == 0) {
 			alert("No clips are selected for replacement.")
@@ -2757,14 +2347,7 @@ $.runScript = {
 						if (typeof fullReplacementPath != "undefined"){
 							if (File(fullReplacementPath).exists){
 								// replace the clip with version in transcodes folder, then check its duration
-								var replaceSuccess = false;
-								
-								var replaceSuccess = selection[i].projectItem.changeMediaPath(File(fullReplacementPath).fsName, true);
-								if (parseFloat(version) > 14.0)  // Premiere 2020
-									var replaceSuccess = selection[i].projectItem.changeMediaPath(File(fullReplacementPath).fsName, true);
-								else
-									var replaceSuccess = selection[i].projectItem.changeMediaPath(fullReplacementPath.fsName, true);
-
+								var replaceSuccess = selection[i].projectItem.changeMediaPath(fullReplacementPath, true);
 								// changemediapath() returns 1 if successful, which is inconsistent with the documentation
 								if (!replaceSuccess && replaceSuccess == "undefined")
 									errorArray.push([selection[i].start.seconds, errorMessage]);
@@ -2812,11 +2395,6 @@ $.runScript = {
 
 		replaceTranscodes: function () {
 		var mainSeq = app.project.activeSequence;
-		var version = "14.01";
-		var versionArray = app.version.split(".");
-		if (versionArray.length > 1)
-			version = versionArray[0] + "." + versionArray[1];
-			
 		var errorArray = [];
 		var selection = mainSeq.getSelection();
 		if (selection.length == 0) {
@@ -2911,9 +2489,6 @@ $.runScript = {
 												array[0] = "Column.Intrinsic.LogNote";
 
 												var setLogNoteFailed = selection[i].projectItem.setProjectMetadata(xmp.serialize(), ["Column.Intrinsic.LogNote"]);
-												if (parseFloat(version) > 14.0)  // Premiere 2020 has opposite return value?
-													setLogNoteFailed = !setLogNoteFailed;
-	
 												// if setting log note failed
 												if (setLogNoteFailed){
 													errorMessage = "Log note couldn't be set for " + selection[i].projectItem.name + ". Make sure Xchange doesn't already think the clip is archived.";
@@ -3007,87 +2582,6 @@ $.runScript = {
 			}
 		}
 	},
-
-	// parse text the same way the AE MOGRT comp expression does
-	AETOSParse: function (inputText){
-        // change these default values if they don't match the AE caption MOGRT comp
-		var breakMode = 2;
-        var maxLineLength = 28;
-		var formattedText = "";
-        var theText = inputText.replace(/[\r\n]+/g, ' ').replace("  ", " ");
-		var fullLineWidth = theText.length;
-		var howManyLines = 1;
-		howManyLines = Math.ceil(fullLineWidth / maxLineLength);
-		if (howManyLines == 0){
-			howManyLines = 1;
-		}
-		// only change line if it's smaller than max length
-		if (theText.length > maxLineLength) {
-			if (breakMode == 1) {
-				var regexString = ".{1," + parseInt(maxLineLength) + "}(\\s|$)";
-				var regex = new RegExp(regexString, "g")
-				var chunks = theText.match(regex);
-				//alert(chunks.length)
-				for (i = 0; i < chunks.length; i++)
-					formattedText += (chunks[i] + "\r\n");
-			}
-			else {
-				var words = theText.split(" ");
-				if (typeof words != 'undefined'){
-					var averageDifferences = [];
-					var eachLineWidth = Math.ceil(fullLineWidth / howManyLines);
-					for (j = -5; j < 6; j++){
-						var thisFormattedText = "";
-						var thisLine = "";
-						for (i = 0; i < words.length; i++){
-							if (eachLineWidth + j >= 0){
-								if ( (thisLine + words[i]).length < eachLineWidth + j)
-									thisLine += (words[i] + " ");
-								else {
-									thisFormattedText += thisLine + "\r\n" + words[i] + " ";
-									thisLine = "";
-								}
-								if (i == words.length - 1){
-									thisFormattedText += thisLine;
-								}	
-							}
-						}
-						var lines = thisFormattedText.split("\r\n");
-						if (lines.length > 0) {
-							var shortestLine = lines[0];
-							var longestLine = lines[0];
-							
-							for (i = 0; i < lines.length; i++){
-								if (lines[i].length > longestLine.length)
-									longestLine = lines[i];
-								if (lines[i].length < shortestLine.length)
-									shortestLine = lines[i];
-							}
-							var lineDiff = longestLine.length - shortestLine.length;
-							averageDifferences.push([thisFormattedText, lineDiff])
-						}
-						else
-							formattedText = "ERROR";
-					}
-					if (averageDifferences.length > 0){
-						bestLine = averageDifferences[0];
-						// find the shortest
-						for (i = 0; i < averageDifferences.length; i++){
-							if (averageDifferences[i][1] < bestLine[1])
-								bestLine = averageDifferences[i];
-						}
-						formattedText = bestLine[0];
-					}
-					else
-						formattedText = "ERROR";
-				}
-			}
-		}
-        else 
-            formattedText = theText;
-        return formattedText;
-    },
-
 
 	// function from Premiere OnScript
 	transcodeProjectItem: function (projectItem, outputPresetPath, outputPath){

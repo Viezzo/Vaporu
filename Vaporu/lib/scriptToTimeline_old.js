@@ -245,7 +245,7 @@ $(document).ready(function() {
         var cs = new CSInterface;	
         var cs = new CSInterface;	
         cs.evalScript('$.runScript.resetSequenceBuilder()');
-        //for (i = 0; i < 4; i++){
+        //for (i = 0; i < 2; i++){
         for (i = 0; i < (shotObjects.length); i++){
             // send object to JSX to insert
             var a = shotObjects[i].visual;
