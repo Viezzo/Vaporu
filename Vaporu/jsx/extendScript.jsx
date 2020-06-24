@@ -1953,8 +1953,8 @@ $.runScript = {
 				visualClip.clearOutPoint();
 				// if it's an image, end it after 3 seconds
 				if (visualFileType == "jpg" || visualFileType == "png"){
-					visualClip.setInPoint(0);
-					visualClip.setOutPoint(3);
+					visualClip.setInPoint(0, 4);
+					visualClip.setOutPoint(3, 4);
 				}
 			}
 			else {
@@ -1969,8 +1969,8 @@ $.runScript = {
 					if (endSeconds > originalOut){
 						endSeconds = originalOut;
 					}
-					visualClip.setInPoint(startSeconds);
-					visualClip.setOutPoint(endSeconds);
+					visualClip.setInPoint(startSeconds, 4);
+					visualClip.setOutPoint(endSeconds, 4);
 				}
 				else {
 					continueInsert = false;
@@ -1985,18 +1985,16 @@ $.runScript = {
 					version = versionArray[0] + "." + versionArray[1];
 
 				//alert(buildSequenceObject.latestEnd)
-				videoTrack.insertClip(visualClip, insertionTime);
+				//alert(insertionTime)
+				videoTrack.overwriteClip(visualClip, insertionTime);
 				// alert(videoTrack.clips.numItems)
 				var lastClipIndex = videoTrack.clips.numItems;				
 				if (lastClipIndex > 0){
 					lastClipIndex = lastClipIndex - 1;
-					buildSequenceObject.latestStart = videoTrack.clips[lastClipIndex].start;
-					buildSequenceObject.latestEnd = videoTrack.clips[lastClipIndex].end;
+					buildSequenceObject.latestStart = videoTrack.clips[lastClipIndex].start.seconds;
+					buildSequenceObject.latestEnd = videoTrack.clips[lastClipIndex].end.seconds;
 				}
 
-				// var lastClipEndObject = videoTrack.clips[lastClipIndex].end;
-				// var lastClipStartObject = videoTrack.clips[lastClipIndex].start;
-				// var thisClipEndSeconds = lastClipEndObject.seconds - lastClipStartObject.seconds;
 				var newEndTime = visualClip.getOutPoint().seconds - visualClip.getInPoint().seconds;
 				if (mode2 == "true"){
 					if (parseFloat(version) > 14.0)
