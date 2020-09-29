@@ -38,6 +38,81 @@ select {
   margin-bottom: -6px;
 }
 
+#audioSearchContainer{
+  padding: 0;
+}
+#audioSearch{
+  border-radius: 3px;
+  margin: 0px;
+  padding: 0;
+}
+#audioSearchControlsButton {
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 8px;
+  padding-bottom: 3px;
+  z-index: 999;
+}
+#audioSearchControls{
+  display: none;
+  padding-bottom: 10px;
+}
+#pigeonHead{
+  margin: -10px 0 0 0;
+  padding: 0;
+}
+#audioPlayerContainer{
+  margin: -15px 0 0 0;
+  overflow-x: hidden;
+}
+#audioPlayer {
+  position: relative;
+}
+#audioResults {
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+.noMargin {
+  margin: 0;
+  padding: 0;
+}
+#courtesiesBox{
+  margin-right: 5px;
+}
+#TOSBox {
+  margin-right: 5px;
+}
+#boldColorPicker{
+  display: none;
+  margin-top: 3px  
+}
+#boldColorSquare{
+  cursor: pointer;
+  margin-left: 3px;
+  background-color: #007EFF;
+  border: 1px solid rgb(210, 210, 210);
+  height: 3px;
+  width: 3px;
+}
+#boldColorSquareContainer {
+  margin: 0;
+  padding-top: 9px;
+}
+#boldColorSquare:hover{
+  border: 1px solid white;
+}
+#boldHexValue {
+  border-radius: 2px;
+  cursor: text;
+  display: inline-block;
+  margin: 0 auto;
+  max-width: 50px;
+  text-align: center;
+}
+
 #captionCharacterLength {
   display: inline-block;
   margin: 0 auto;
@@ -94,6 +169,17 @@ select {
   max-width: 200px;
   width: 50vw;
 }
+
+#showHideApps {
+  cursor: pointer;
+  font-size: 20px;
+  margin: 0;
+  padding: 0 10px 0 0;
+}
+#showHideApps:hover {
+  color: #bdbdbd;
+}
+
 
 #srtHolder {
   background-color: #bdbdbd;
@@ -168,9 +254,27 @@ select {
   padding: 1px 0px 0px 0px;
   cursor: pointer;
 }
+#insider-logo:hover {
+  opacity: 0.9;
+}
 
 #panelVersion {
   display: none;
+}
+#panelControls{
+  margin: 0;
+  padding: 0;
+}
+#pigeonControls{
+  margin: 0;
+  padding: 0;
+}
+#pigeonLoginErrorMessage{
+  display: none;
+}
+
+#pigeonUser, #pigeonPass, #audioSearch {
+  cursor: text;
 }
 
 #relinkHolder {
@@ -260,6 +364,20 @@ select {
   display: none;
 }
 
+#splitScreenMethod {
+  cursor: pointer;
+}
+#splitScreenXSplits, #splitScreenYSplits{
+  cursor: text;
+  display: inline-block;
+  margin: 0 5px 0 0;
+  max-width: 15px;
+  text-align: center;
+}
+#splitXYButton {
+  cursor: pointer;
+}
+
 #horizontalThumbPixels {
   cursor: text;
   display: inline-block;
@@ -278,6 +396,10 @@ select {
 }
 
 #projectToolsControls{
+  display: none;
+}
+
+#splitScreenApp {
   display: none;
 }
 
@@ -336,11 +458,6 @@ select {
 .colorControlsElement {
   margin-top: 1px;
   cursor: pointer;
-}
-
-.fa-cog {
-  font-size: 16px;
-  color: white;
 }
 
 .fa-circle {
@@ -412,6 +529,97 @@ select {
   text-align: center;
   max-width: 200px;
   padding-left: 30px;
+}
+
+#pigeonWindow {
+  display: none;
+}
+
+#searchResultsWindow{
+  height: 70vh;
+  max-width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.searchResult {
+  border: 1px solid #404040;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 2px;
+}
+.searchResult:hover {
+  border: 1px solid grey;
+}
+.searchResultName {
+  display: inline-block;
+  width: 72vw;
+  overflow-x: hidden;
+  vertical-align: middle;
+}
+.searchResultDuration {
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: middle;
+  width: 30px;
+}
+.searchResultDownloadingMessage {
+  color: #ccc;
+  font-size: 16px;
+  margin: 0px 12px;
+  text-align: center;
+  vertical-align: middle;
+  width: 40px;
+}
+.searchResultDownloadingMessage:hover {
+  color: white;
+}
+.searchResultStatusMessage{
+  color: rgb(255, 214, 89);
+  display: none;
+  text-align: center;
+  margin: 0 auto;
+  padding: 0 auto;
+}
+
+.splitContainerBig {
+  margin: 0;
+  padding: 1px;
+}
+.splitContainer {
+  display: inline-block;
+  margin: 0;
+  padding: 4px;
+}
+.splitOption {
+  cursor: pointer;
+  max-height: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.splitOption:hover { 
+  background-color: rgb(28, 28, 28);
+}
+.whiteBgWide {
+  background-color: black;
+  margin: 0;
+  padding: 0;
+  height: 56px;
+  width: 100px;
+}
+.whiteBgSquare {
+  background-color: black;
+  margin: 0;
+  padding: 0;
+  width: 65px;
+  height: 65px;
+}
+.whiteBgVertical {
+  background-color: black;
+  margin: 0;
+  padding: 0;
+  height: 100px;
+  width: 56px;
 }
 
 .thumbOptionsContainer {
@@ -498,6 +706,17 @@ select {
   display: none;
 }
 
+#searchResultsNumberContainer {
+  display: none;
+  margin: 0 0 2px 0;
+  padding: 0;
+  position: relative;
+}
+#searchResultsNumber {
+  margin: 0;
+  padding: 0;
+}
+
 #sizeSlider {
   max-width: 90px;
   vertical-align: bottom;
@@ -509,6 +728,10 @@ select {
   margin: -2px;
 }
 
+.app {
+  display: none;
+}
+
 .colorControlsElement {
   display: inline-block;
   vertical-align: middle;
@@ -516,6 +739,9 @@ select {
 
 .labelContainer {
   display: block;
+}
+.lighterTD {
+  background-color: #363636;
 }
 
 .groupLabel {
@@ -555,4 +781,30 @@ select {
   font-size: 16;
   display: block;
   background: rgba(0, 0,0, 0.5);
+}
+
+@keyframes spinner {
+  to {transform: rotate(360deg);}
+}
+
+.spinnerContainer {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.progressBarContainer {
+  height: 5px;
+  width: 100px;
+}
+
+.spinner {
+  content: '';
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  border-top-color: #000;
+  animation: spinner .6s linear infinite;
 }

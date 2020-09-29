@@ -13,6 +13,18 @@ $(document).ready(function() {
         $("#saveMessage").text("Layout saved.");
     }); 
 
+    $("#showHideApps").click(function () {
+        var caratElement = $(this).html();
+        if (caratElement.includes("caret-up")) {
+            $("#appButtons").slideUp();
+            $(this).html('<i class="fas fa-caret-down"></i>');
+        }
+        else {
+            $("#appButtons").slideDown();
+            $(this).html('<i class="fas fa-caret-up"></i>');
+        }
+    }); 
+
     function getPreferences() {
         var cs = new CSInterface;	
         cs.evalScript('$.runScript.readPreferences()', function(returnString){
@@ -20,6 +32,13 @@ $(document).ready(function() {
             try {
                 if (returnString && typeof returnString != "undefined")
                     configs = JSON.parse(returnString);
+
+                    //HIDE/SHOW APPS
+                    if (configs.areAppsHidden == true) {
+                        $("#appButtons").slideUp(2);
+                        $("#showHideApps").html('<i class="fas fa-caret-down"></i>');
+                    }
+                    
                     //OPEN APPS
                     for (i = 0; i < configs.openApps.length; i++)
                         openApp(configs.openApps[i])
@@ -69,6 +88,7 @@ $(document).ready(function() {
 
     function writePreferences() {
         var newJSON = {
+            "areAppsHidden":false,
             "openApps":[],
             "segmentExporter": {"exportPreset": "HQ"},
             "captionsReformat": {"addMarkers": false},
@@ -79,6 +99,9 @@ $(document).ready(function() {
             "projectTools": {"displayHelp": true, "relinkWith":"1", "renameFrom": "1", "renameTo": "4", "addCommentsTo":"Clip"},
             "colorPalettes": {"hiddenColorGroups":[], "size":75, "labels":true}
         }
+        // HIDE/SHOW APPS
+        newJSON.areAppsHidden = $("#showHideApps").html().includes("caret-down");
+
         // OPEN APPS
         var openAppsArray = [];
         $('.app').each(function() { 
@@ -137,9 +160,9 @@ $(document).ready(function() {
         $(".app").each(function() {
             if ($(this).attr('id') == appName){
                 $(this).slideDown(2);
+                // if we found an open app, also turn its button background darker
                 $(".appButton").each(function() {
                     if ($(this).attr("data-appName") == appName){
-                        $(this).animate({backgroundColor: "rgba(0, 0, 0, .3)"}, 300);
                         $(this).css("background-color", "rgba(0, 0, 0, .3)");
                     }
                 });

@@ -160,24 +160,12 @@ $(document).ready(function() {
     $("#infoModal").slideToggle();
   });
 
-  $(".fa-cog").click(function(){
-    $("#controls").slideToggle();
-  });
-
   $(".fa-info-circle").hover(function () {
     $(this).animate({color: "#1cf4ff"});
     //$("#infotooltip").css("visibility", "visible");
   }, function(){
     $(this).animate({color:  "white"});
     //$("#infotooltip").css("visibility", "hidden");
-  });
-
-  $(".fa-cog").hover(function () {
-    $(this).animate({color: "#1cff73"});
-    //$("#controlstooltip").css("visibility", "visible");
-  }, function(){
-    $(this).animate({color: "white"});
-    //$("#controlstooltip").css("visibility", "hidden");
   });
 
   $('[data-toggle="infoTooltip"]').tooltip({

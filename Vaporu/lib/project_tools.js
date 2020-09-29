@@ -353,7 +353,10 @@ $(document).ready(function() {
 
     //SCRIPT IMPORTER
     $("#csvHolder").hover(function () { showHelp(
-        'Upload a script here. In Google Sheets, go to File > Download > Comma-separated values to get the CSV file.'
+        'Upload a script here. In Google Sheets, go to File > Download > Microsoft Excel to get the XLSX file.'
+    )}, function(){hideHelp()});    
+    $("#scriptPreviewButtonHolder").hover(function () { showHelp(
+        "Display a preview of how Vaporu reads your script. If the Script Importer isn't working, try seeing if the preview matches what you expect."
     )}, function(){hideHelp()});    
     $("#courtesiesBox").hover(function () { showHelp(
         "Include courtesy MOGRTs from the script. Only works if you're part of the Insider Shared Library."
@@ -363,7 +366,16 @@ $(document).ready(function() {
     )}, function(){hideHelp()});    
     $("#csvParser").hover(function () { showHelp(
         'Creates a rough cut of your video from the uploaded script. All footage must be in a bin called "Media from Xchange" to work.'
-    )}, function(){hideHelp()});    
+    )}, function(){hideHelp()});  
+    $("#boldColorBox").hover(function () { showHelp(
+        "Colors words that are bolded in the script. Doesn't work if the entire cell in the script is bolded."
+    )}, function(){hideHelp()});      
+    $("#boldColorSquareContainer").hover(function () { showHelp(
+        "Bolded words and compilation numbers will appear in this color. Click to modify it."
+    )}, function(){hideHelp()});     
+    $("#boldColorPicker").hover(function () { showHelp(
+        "Input the a color's hex value (in the format #ABC123). If you omit the # sign, it'll be added for you."
+    )}, function(){hideHelp()}); 
 
     //PROJECT TOOLS
     $("#generateReportButton").hover(function () { showHelp(
@@ -441,4 +453,26 @@ $(document).ready(function() {
     )}, function(){hideHelp()})
 
 
+    //SPLIT SCREEN
+    $("#splitScreenButton").hover(function () { showHelp(
+        'Add split screen effects to your videos.'
+    )}, function(){hideHelp()});    
+    $("#splitScreenMethodContainer").hover(function () { showHelp(
+        'If set to "Nest (Precompose)" your selected clips will be nested and each nest will be positioned. Otherwise, the Transform and Crop effects will be added to each selected clip to position them.'
+    )}, function(){hideHelp()});    
+    $(".splitOption").hover(function () { 
+        var idName = $(this).attr('id'); 
+        var numberOfClips = idName.charAt(idName.length-1);
+        showHelp(
+        'Select ' + numberOfClips + ' clips on different layers in your timeline, then click here to make a splitscreen of them.'
+    )}, function(){hideHelp()});   
+
+
+    //PIGEON
+    $("#pigeonButton").hover(function () { showHelp(
+        "Import audio from Insider's sound libraries."
+    )}, function(){hideHelp()});    
+    $("#pigeonLogin").hover(function () { showHelp(
+        "Log in using your Vaporu credentials. These are NOT your BI credentials."
+    )}, function(){hideHelp()});    
 });
