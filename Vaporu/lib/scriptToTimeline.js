@@ -38,6 +38,10 @@ $(document).ready(function() {
         $("#boldColorPicker").slideToggle();
     });
 
+    $("#boldHexValue").click(function(){
+        $("#boldHexValue").select(); 
+    });
+
     $("#boldHexValue").change(function(){
         var hexRegex = /^#([0-9a-f]{6}|[0-9a-f]{3})$/i;
         if (!$(this).val().startsWith('#')) {
@@ -46,7 +50,6 @@ $(document).ready(function() {
         }
         if ($(this).val().match(hexRegex))
             $("#boldColorSquare").css('backgroundColor', $(this).val())
-        //alert($("#boldColorSquare").css('backgroundColor'))
     });
 
     // reset button and its tooltip
@@ -80,7 +83,13 @@ $(document).ready(function() {
 
     $("#scriptPreviewButton").click(function(){
         if (window.xlSheetData.xlsheet){
-            var shots = makeShotsFromXlsx();
+            var shots;
+            try {
+                shots = makeShotsFromXlsx();
+            } catch (error) {
+                alert("Error parsing the XLSX file: " + error)
+                return 0;
+            }
 
             $('#scriptPreviewBox').find("tr").not("#previewTableHeader").remove();
             $('#scriptPreviewBox').css("display", "block");
@@ -119,40 +128,41 @@ $(document).ready(function() {
         var regex = /Shot\s[0-9]*/; // find rows formatted with "Shot 1", "Shot 29", etc
         var visualRowLabel = "Visual | Timecodes";
         var textRowLabel = "Overlay text (optional):"
-
         for (row in jsonObj){
+            if (typeof jsonObj[row].PROPERTY == 'string'){
             // if this is a row that's labeled HOOK SHOT or "Shot 1", etc, we're looking at a shot construction.
-            if (jsonObj[row].PROPERTY.trim().match(regex) || jsonObj[row].PROPERTY.trim() == "HOOK SHOT"){
-                var visualRowsInThisShot = []   //the next row starts the visuals, but there can be more than one.
-                var firstRowNumber = parseInt(row) + 1;
-                var theTextRow;
-                for (rowNumber = firstRowNumber; rowNumber < firstRowNumber + 100; rowNumber++){    //max number of visuals in a shot is 100
-                    if (typeof jsonObj[rowNumber] != 'undefined') {   //row exists. Is it a visual? 
-                        if (jsonObj[rowNumber].PROPERTY.trim() == visualRowLabel) 
-                            visualRowsInThisShot.push(jsonObj[rowNumber]);
-                        else if (jsonObj[rowNumber].PROPERTY.trim() == textRowLabel) { // if this is a text row, stop finding new visuals
-                            theTextRow = jsonObj[rowNumber];
-                            break;
-                        }
-                        else {
-                            theTextRow = "";
-                            break;
-                        }
-                    }                            
-                }
-                for (visualItem in visualRowsInThisShot) {
-                    var htmlText = "";
-                    var thisRow = theTextRow.__rowNum__ + 1;
-                    var address_of_cell = "B" + thisRow;
-                    var text_cell = worksheet[address_of_cell];
-                    //console.log(text_cell)
+                if (jsonObj[row].PROPERTY.trim().match(regex) || jsonObj[row].PROPERTY.trim() == "HOOK SHOT"){
+                    var visualRowsInThisShot = []   //the next row starts the visuals, but there can be more than one.
+                    var firstRowNumber = parseInt(row) + 1;
+                    var theTextRow;
+                    for (rowNumber = firstRowNumber; rowNumber < firstRowNumber + 100; rowNumber++){    //max number of visuals in a shot is 100
+                        if (typeof jsonObj[rowNumber] != 'undefined') {   //row exists. Is it a visual? 
+                            if (jsonObj[rowNumber].PROPERTY.trim() == visualRowLabel) 
+                                visualRowsInThisShot.push(jsonObj[rowNumber]);
+                            else if (jsonObj[rowNumber].PROPERTY.trim() == textRowLabel) { // if this is a text row, stop finding new visuals
+                                theTextRow = jsonObj[rowNumber];
+                                break;
+                            }
+                            else {
+                                theTextRow = "";
+                                break;
+                            }
+                        }                            
+                    }
+                    for (visualItem in visualRowsInThisShot) {
+                        var htmlText = "";
+                        var thisRow = theTextRow.__rowNum__ + 1;
+                        var address_of_cell = "B" + thisRow;
+                        var text_cell = worksheet[address_of_cell];
+                        //console.log(text_cell)
 
-                    var text_value = (text_cell ? text_cell.h : undefined);
-                    if (text_value) 
-                        htmlText = text_value;
+                        var text_value = (text_cell ? text_cell.h : undefined);
+                        if (text_value) 
+                            htmlText = text_value;
 
-                    var newShot = createShotObject(visualRowsInThisShot[visualItem], theTextRow, htmlText);
-                    shots.push(newShot);
+                        var newShot = createShotObject(visualRowsInThisShot[visualItem], theTextRow, htmlText);
+                        shots.push(newShot);
+                    }
                 }
             }
         }
@@ -304,15 +314,20 @@ $(document).ready(function() {
 
     function sendShotstoPremiere(csvInput){
         if (window.xlSheetData.xlsheet){
-            var shotObjects = makeShotsFromXlsx();
-            
+            var shotObjects;
+            try {
+                shotObjects = makeShotsFromXlsx();
+            } catch (error) {
+                alert("Error parsing the XLSX file: " + error)
+                return 0;
+            }
 
             var cs = new CSInterface;	
             cs.evalScript('$.runScript.resetSequenceBuilder()');
 
             var successArray = [];
             var errorArray = [];
-            //for (i = 0; i < 4; i++){
+            // for (i = 0; i < 4; i++){
             for (i = 0; i < (shotObjects.length); i++){
                 // send object to JSX to insert
                 var a = shotObjects[i].visual;
@@ -331,46 +346,46 @@ $(document).ready(function() {
                 var mode4 = $('#mode4').is(":checked");
                 var boldColor = $("#boldColorSquare").css('backgroundColor');  
 
-                if (a != 'N/A') { //only process the clip if it actually has a visual
-                    cs.evalScript('$.runScript.insertVisualFromXLSX('
-                    + '"' + a + '"' + ','
-                    + '"' + b + '"' + ','
-                    + '"' + c + '"' + ','
-                    + '"' + d + '"' + ','
-                    + '"' + e + '"' + ','
-                    + '"' + f + '"' + ','
-                    + '"' + g + '"' + ','
-                    + '"' + mode2 + '"' + ','
-                    + '"' + mode3 + '"' + ','
-                    + '"' + mode4 + '"' + ','
-                    + '"' + boldColor + '"' + ')', function(returnString) {
-                        try {
-                            if (typeof returnString == 'undefined')
-                                successArray.push('Unknown error on shot ' + (successArray.length + errorArray.length + 1) + ' of ' + shotObjects.length)
-                            else
-                                successArray.push(returnString + ' on shot ' + (successArray.length + errorArray.length + 1) + ' of ' + shotObjects.length);
-                            //if we're on the last added shot
-                            if (successArray.length + errorArray.length == shotObjects.length - 1){
-                                var errorString = 'Error processing these shots: \n';
-                                for (j = 0; j < (successArray.length); j++){
-                                    if (!successArray[j].startsWith('success'))
-                                        errorString += '- ' + successArray[j] + "\n";
-                                }
-                                if (errorArray.length > 0) //there were errors here
-                                    errorString += ' More errors: ' + errorArray.join(',');
-                                
-                                if (errorString != 'Error processing these shots: \n')              
-                                    alert(errorString);
+                cs.evalScript('$.runScript.insertVisualFromXLSX('
+                + '"' + a + '"' + ','
+                + '"' + b + '"' + ','
+                + '"' + c + '"' + ','
+                + '"' + d + '"' + ','
+                + '"' + e + '"' + ','
+                + '"' + f + '"' + ','
+                + '"' + g + '"' + ','
+                + '"' + mode2 + '"' + ','
+                + '"' + mode3 + '"' + ','
+                + '"' + mode4 + '"' + ','
+                + '"' + boldColor + '"' + ')', function(returnString) {
+                    try {
+                        if (typeof returnString == 'undefined')
+                            successArray.push('Unknown error on shot ' + (successArray.length + errorArray.length + 1) + ' of ' + shotObjects.length)
+                        else
+                            successArray.push(returnString + ' on shot ' + (successArray.length + errorArray.length + 1) + ' of ' + shotObjects.length);
+                        //if we're on the last added shot
+                        if (successArray.length + errorArray.length == shotObjects.length - 1){
+                            var errorString = 'Error processing these shots: \n';
+                            for (j = 0; j < (successArray.length); j++){
+                                if (!successArray[j].startsWith('success'))
+                                    errorString += '- ' + successArray[j] + "\n";
                             }
-                        } catch (error) {
-                            errorArray.push(error);
-                            //if we're on the last added shot
-                            if (successArray.length + errorArray.length == shotObjects.length - 1){
-                                alert(successArray.join(',') + ' || ') + errorArray.join(',');                        
-                            }
+                            if (errorArray.length > 0) //there were errors here
+                                errorString += ' More errors: ' + errorArray.join(',');
+                            
+                            if (errorString != 'Error processing these shots: \n')              
+                                alert(errorString);
+
+                            //alert(successArray.length + ', ' +  errorArray.length + ', ' +  shotObjects.length - 1)
                         }
-                    });
-                }
+                    } catch (error) {
+                        errorArray.push(error);
+                        //if we're on the last added shot
+                        if (successArray.length + errorArray.length == shotObjects.length - 1){
+                            alert(successArray.join(',') + ' || ') + errorArray.join(',');                        
+                        }
+                    }
+                });
             }
         }
     }

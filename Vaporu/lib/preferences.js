@@ -56,12 +56,16 @@ $(document).ready(function() {
                     $('#scaleCenterCheckbox').prop('checked', configs.fitToFrame.center);
                     $('#scaleToValue').val(configs.fitToFrame.scaleTo);
 
-                    //TEXT TO MOGRT
-                    $('#mogrtTypeOptions').val(configs.textToMOGRT.textToMogrtType);
+                    //MOGRT MASTER
+                    $('#mogrtTypeOptions').val(configs.mogrtMaster.textToMogrtType);
+                    $('#updateCaptionsLengthInput').val(configs.mogrtMaster.captionCharacters);
 
                     //SCRIPT IMPORTER
                     $('#mode2').prop('checked', configs.scriptImporter.courtesies);
                     $('#mode3').prop('checked', configs.scriptImporter.tos);
+                    $('#mode4').prop('checked', configs.scriptImporter.bold);
+                    $('#boldHexValue').val(configs.scriptImporter.color);
+                    $("#boldColorSquare").css('backgroundColor', configs.scriptImporter.color)
 
                     //PROJECT TOOLS
                     $('#showVaporuMessages').prop('checked', configs.projectTools.displayHelp);
@@ -79,6 +83,13 @@ $(document).ready(function() {
                     updateSize(configs.colorPalettes.size);
                     $('#showLabels').prop('checked', configs.colorPalettes.labels);
                     updateLabels();
+
+                    //SPLIT SCREEN
+                    $('#splitScreenXSplits').val(configs.splitScreen.x);
+                    $('#splitScreenYSplits').val(configs.splitScreen.y);
+
+                    //PIGEON
+                    $('#pigeonUser').val(configs.pigeon.username);
                 }
             catch (error) {
                 alert(error);
@@ -94,10 +105,12 @@ $(document).ready(function() {
             "captionsReformat": {"addMarkers": false},
             "thumbsExport": {"lock": false},
             "fitToFrame": {"center": true, "scaleTo": 100},
-            "textToMOGRT": {"textToMogrtType": "TOS"},
-            "scriptImporter": {"courtesies": false, "tos": false},
+            "mogrtMaster": {"textToMogrtType": "TOS", "captionCharacters": 28},
+            "scriptImporter": {"courtesies": false, "tos": false, "bold": false, "color": "#007EFF"},
             "projectTools": {"displayHelp": true, "relinkWith":"1", "renameFrom": "1", "renameTo": "4", "addCommentsTo":"Clip"},
-            "colorPalettes": {"hiddenColorGroups":[], "size":75, "labels":true}
+            "colorPalettes": {"hiddenColorGroups":[], "size":75, "labels":true},
+            "splitScreen": {"x":1, "y":2},
+            "pigeon": {"username":""}
         }
         // HIDE/SHOW APPS
         newJSON.areAppsHidden = $("#showHideApps").html().includes("caret-down");
@@ -126,11 +139,14 @@ $(document).ready(function() {
         newJSON.fitToFrame.scaleTo = $('#scaleToValue').val();
 
         //TEXT TO MOGRT
-        newJSON.textToMOGRT.textToMogrtType = $('#mogrtTypeOptions').val();
+        newJSON.mogrtMaster.textToMogrtType = $('#mogrtTypeOptions').val();
+        newJSON.mogrtMaster.captionCharacters = $('#updateCaptionsLengthInput').val();
 
         //SCRIPT IMPORTER
         newJSON.scriptImporter.courtesies = $('#mode2').is(":checked");
         newJSON.scriptImporter.tos = $('#mode3').is(":checked");
+        newJSON.scriptImporter.bold = $('#mode4').is(":checked");
+        newJSON.scriptImporter.color = $('#boldHexValue').val();
 
         //PROJECT TOOLS
         newJSON.projectTools.displayHelp = $('#showVaporuMessages').is(":checked");
@@ -151,6 +167,13 @@ $(document).ready(function() {
         newJSON.colorPalettes.hiddenColorGroups = hiddenColorGroupsArray;
         newJSON.colorPalettes.size = $("#sizeSlider").val();
         newJSON.colorPalettes.labels = $('#showLabels').is(":checked");
+
+        //SEGMENT EXPORTER
+        newJSON.splitScreen.x = $('#splitScreenXSplits').val();
+        newJSON.splitScreen.y = $('#splitScreenYSplits').val();
+
+        //PIGEON
+        newJSON.pigeon.username = $('#pigeonUser').val();
 
         var cs = new CSInterface;	
         cs.evalScript('$.runScript.writePreferences(' + JSON.stringify(newJSON) + ')');

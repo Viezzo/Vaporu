@@ -16,14 +16,25 @@ $(document).ready(function() {
     $("#splitXYButton").click(function(){
         var ySplits = $("#splitScreenYSplits").val();
         var xSplits = $("#splitScreenXSplits").val();
-        
-        var cs = new CSInterface;	
-        var precompose = $("#splitScreenMethod").val() == 'nest' ? true : false;
+        createSplitScreen(xSplits, ySplits);
+    });
 
-        cs.evalScript('$.runScript.splitScreen2('  
+    $("#splitWide2").click(function(){ createSplitScreen(2, 1) });
+    $("#splitWide3").click(function(){ createSplitScreen(3, 1) });
+    $("#splitWide4").click(function(){ createSplitScreen(4, 1) });
+    $("#splitSquare4").click(function(){ createSplitScreen(2, 2) });
+    $("#splitVertical2").click(function(){ createSplitScreen(1, 2) });
+    $("#splitVertical3").click(function(){ createSplitScreen(1, 3) });
+    $("#splitVertical4").click(function(){ createSplitScreen(1, 4) });
+
+    function createSplitScreen(xSplits, ySplits){
+        var cs = new CSInterface;	
+        var splitMethod = $("#splitScreenMethod").val();
+
+        cs.evalScript('$.runScript.splitScreen('  
             + JSON.stringify(ySplits) + ', '  
             + JSON.stringify(xSplits) + ', '  
-            + JSON.stringify(precompose)
+            + JSON.stringify(splitMethod)
             + ')', function(returnString){
             // parse JSON return value
             try {
@@ -32,36 +43,6 @@ $(document).ready(function() {
                 alert(error);
             }
         });
-    });
-
-    // $("#splitWide2").click(function(){ createSplitScreen("Wide", 2) });
-    // $("#splitWide3").click(function(){ createSplitScreen("Wide", 3) });
-    // $("#splitWide4").click(function(){ createSplitScreen("Wide", 4) });
-    // $("#splitSquareLeftRight2").click(function(){ createSplitScreen("Square", 2) });
-    // $("#splitSquareUpDown2").click(function(){ createSplitScreen("Square", 3) });
-    // $("#splitSquare4").click(function(){ createSplitScreen("Square", 4) });
-    // $("#splitVertical2").click(function(){ createSplitScreen("Vertical", 2) });
-    // $("#splitVertical3").click(function(){ createSplitScreen("Vertical", 3) });
-    // $("#splitVertical4").click(function(){ createSplitScreen("Vertical", 4) });
-
-    // function createSplitScreen(ARchoice, numberOfClips) {
-    //     var cs = new CSInterface;	
-    //     var precompose = $("#splitScreenMethod").val() == 'nest' ? true : false;
-
-    //     cs.evalScript('$.runScript.splitScreen('  
-    //         + JSON.stringify(ARchoice) + ', '  
-    //         + JSON.stringify(numberOfClips) + ', '  
-    //         + JSON.stringify(precompose)
-    //         + ')', function(returnString){
-    //         // parse JSON return value
-    //         try {
-    //         }
-    //         catch (error) {
-    //             alert(error);
-    //         }
-    //     });
-    // }
-
-
+    }
 
 });

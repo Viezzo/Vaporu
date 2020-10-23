@@ -33,7 +33,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 				</Lifecycle>
 				<UI>
 					<Type>Panel</Type>
-					<Menu>Vaporu 3.11</Menu>
+					<Menu>Vaporu 3.2</Menu>
 					<Geometry>
 						<Size>
 							<Height>400</Height>

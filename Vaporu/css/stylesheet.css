@@ -20,6 +20,9 @@ input {
   margin: auto;
   max-width: 100%;
 }
+select {
+  color: white;
+}
 
 div {
   padding: 5px;
@@ -541,6 +544,29 @@ select {
   overflow-y: auto;
   overflow-x: hidden;
 }
+#updateCaptionsLengthInput {
+  cursor: text;
+  display: inline-block;
+  margin: 0 auto;
+  max-width: 22px;
+  text-align: center;
+}
+
+#audioLibrarySearchOrder {
+  cursor: pointer;
+}
+.audioLibraryChoice{
+  cursor: pointer;
+  display: inline-block;
+  background-color: #404040;
+  border-radius: 5px;
+  padding: 3px;
+  margin: 3px;
+  -webkit-user-select: none;     
+  -moz-user-select: none;
+  -ms-user-select: none; 
+}
+
 .searchResult {
   border: 1px solid #404040;
   border-radius: 5px;
@@ -589,6 +615,7 @@ select {
   display: inline-block;
   margin: 0;
   padding: 4px;
+  vertical-align: middle;
 }
 .splitOption {
   cursor: pointer;
@@ -707,7 +734,6 @@ select {
 }
 
 #searchResultsNumberContainer {
-  display: none;
   margin: 0 0 2px 0;
   padding: 0;
   position: relative;
@@ -715,6 +741,9 @@ select {
 #searchResultsNumber {
   margin: 0;
   padding: 0;
+}
+#searchResultsNoLibraries {
+  display: none;
 }
 
 #sizeSlider {

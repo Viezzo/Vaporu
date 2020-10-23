@@ -349,7 +349,10 @@ $(document).ready(function() {
     )}, function(){hideHelp()});    
     $("#convertToMOGRTButton").hover(function () { showHelp(
         'Converts every text clip to a MOGRT of your choice with the same text. Useful for reframing sequences.'
-    )}, function(){hideHelp()});    
+    )}, function(){hideHelp()});  
+    $("#captionSplitLengthParent").hover(function () { showHelp(
+        'Update the selected Caption_2020 MOGRTs to split into two lines only if the whole line is longer than a certain character count.'
+    )}, function(){hideHelp()});  
 
     //SCRIPT IMPORTER
     $("#csvHolder").hover(function () { showHelp(
@@ -433,14 +436,6 @@ $(document).ready(function() {
     $("#colorPalettesButton").hover(function () { showHelp(
         "Easily work with the color palettes for different Insider video teams."
     )}, function(){hideHelp()});
-    // $(document).on('mouseover', '.groupLabel', showHelp(
-    //     'Click on a group name to expand or collapse its colors.'
-    // ));
-    // $(document).on('mouseout', '.groupLabel', hideHelp());
-    // $(document).on('mouseover', '.swatch', showHelp(
-    //     'When you click on a color swatch, its hex code will be copied to your clipboard. The next time you paste, it will be that color.'
-    // ));
-    // $(document).on('mouseout', '.swatch', hideHelp());
     $("#sizeSlider").hover(function () { showHelp(
         'Adjust the display size for color swatches.'
     )}, function(){hideHelp()})
@@ -466,6 +461,13 @@ $(document).ready(function() {
         showHelp(
         'Select ' + numberOfClips + ' clips on different layers in your timeline, then click here to make a splitscreen of them.'
     )}, function(){hideHelp()});   
+    $(".splitScreenUpSideSplits").hover(function () { showHelp(
+        'Create a grid with x number of videos distributed horizontally, and y number of vertically distributed videos. An x or y value of 1 means there are no splits on that axis.'
+    )}, function(){hideHelp()});  
+    $("#splitXYButton").hover(function () { showHelp(
+        'Splits your selected videos into a grid, distributed according to your x and y values.'
+    )}, function(){hideHelp()});  
+
 
 
     //PIGEON

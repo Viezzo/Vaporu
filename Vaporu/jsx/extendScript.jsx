@@ -85,7 +85,7 @@ $.runScript = {
 	},
 
 	readPreferences: function() {
-		var pathToPreferences = $.runScript.getPreferencesPath();
+		var pathToPreferences = $.runScript.getPreferencesPath() + 'preferences.json';
 		var theFile = File(pathToPreferences);
 		if (theFile.exists) {
 			if (theFile.fsName.indexOf('.json')) {
@@ -108,10 +108,12 @@ $.runScript = {
 					"captionsReformat": {"addMarkers": false},
 					"thumbsExport": {"lock": false},
 					"fitToFrame": {"center": true, "scaleTo": 100},
-					"textToMOGRT": {"textToMogrtType": "TOS"},
-					"scriptImporter": {"courtesies": false, "tos": false},
+					"mogrtMaster": {"textToMogrtType": "TOS", "captionCharacters": 28},
+            		"scriptImporter": {"courtesies": false, "tos": false, "bold": false, "color": "#007EFF"},
 					"projectTools": {"displayHelp": true, "relinkWith":"1", "renameFrom": "1", "renameTo": "4", "addCommentsTo":"Clip"},
-					"colorPalettes": {"hiddenColorGroups":[], "size":75, "labels":true}
+					"colorPalettes": {"hiddenColorGroups":[], "size":75, "labels":true},
+					"splitScreen": {"x":1, "y":2},
+					"pigeon": {"username":""}
 				}
 				newFileContents = JSON.stringify(theJSON);
 				theNewFile.open("w");
@@ -124,7 +126,7 @@ $.runScript = {
 	},
 
 	writePreferences: function(inputContents) {
-		var pathToPreferences = $.runScript.getPreferencesPath();
+		var pathToPreferences = $.runScript.getPreferencesPath() + 'preferences.json';
 		var outFile = File(pathToPreferences);
 		var newFileContents = JSON.stringify(inputContents)
 		if (outFile) {
@@ -139,9 +141,9 @@ $.runScript = {
 
 	getPreferencesPath: function() {
 		if (Folder.fs === 'Macintosh') {
-			return '~/Library/Caches/CSXS/cep_cache/PPRO_' + app.version + '_com.AdrianTraviezo.Vaporu/preferences.json';
+			return '~/Library/Caches/CSXS/cep_cache/PPRO_' + app.version + '_com.AdrianTraviezo.Vaporu/';
 		} else {
-			return 'C:\\Users\\' + $.runScript.getUserName() + '\\AppData\\Local\\Temp\\cep_cache\\PPRO_' + app.version + '_com.AdrianTraviezo.Vaporu\\preferences.json';
+			return 'C:\\Users\\' + $.runScript.getUserName() + '\\AppData\\Local\\Temp\\cep_cache\\PPRO_' + app.version + '_com.AdrianTraviezo.Vaporu\\';
 		}
 	},
 
@@ -462,7 +464,7 @@ $.runScript = {
 						var xmp	= new XMPMeta(projectMetadata);
 						// check the schema again to see if it's now there
 						if (successfullyAdded){
-							var testLabel = $.runScript.setMetadataValue(projectItem, name, " ");
+							var testLabel = $.runScript.setProjectMetadataValue(projectItem, name, " ");
 							propertyExists = testLabel == true ? true: false;
 						}
 					}
@@ -474,7 +476,7 @@ $.runScript = {
 		return customMetadataSuccess;
 	},
 
-	getMetadataValue: function (obj, metadataLabel){
+	getProjectMetadataValue: function (obj, metadataLabel){
 		var resultData;
 		if (app.isDocumentOpen()) {
 			if (ExternalObject.AdobeXMPScript == undefined) {
@@ -489,7 +491,7 @@ $.runScript = {
 		return resultData;
 	},
 
-	setMetadataValue: function (obj, metadataLabel, newValue){
+	setProjectMetadataValue: function (obj, metadataLabel, newValue){
 		var setSuccess = false;
 		if (app.isDocumentOpen()) {
 			if (ExternalObject.AdobeXMPScript == undefined) {
@@ -546,10 +548,33 @@ $.runScript = {
 			var confirmedVideos = 0;
 			var sameFileNames = 0;
 			var sameFileNamesText = "";
+			var lastVideoName = "";
 			for (i = 0; i < selection.length; i++) { // go through each media to replace, then replace it.
-				var clipItem = selection[i].projectItem;				
-				if (typeof clipItem != "undefined" && selection[i].mediaType == "Video"){ //ensure that we're selecting a video
+				var clipItem = selection[i].projectItem;	
+				if (typeof clipItem != "undefined"){ 
+					// check if projectItem is audio 
+					var clipIsAudio = false;
+					var clipType;
+					if (app.isDocumentOpen()) {
+						if (ExternalObject.AdobeXMPScript == undefined) {
+							ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
+						}
+						if (ExternalObject.AdobeXMPScript != undefined) {
+							var projectMetadata = clipItem.getProjectMetadata();
+							var xmp = new XMPMeta(projectMetadata);
+							clipType = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaType")).toString().replace();
+						}
+					}
+					if (clipType != "undefined"){
+						if (clipType == "Audio")
+							clipIsAudio = true;
+					}
+					// skip if this is an audio clip attached to a video
+					if (selection[i].mediaType == "Audio" && !clipIsAudio)
+						continue;
+
 					confirmedVideos++;
+					lastVideoName == clipItem.name;
 					var foundClipNodeID = false;
 					for (z = 0; z < replaceIDs.length; z++){
 						if (replaceIDs[z] == clipItem.nodeId)
@@ -585,9 +610,9 @@ $.runScript = {
 								}
 								var setOGnames = typeof OGClipValue != "undefined" && typeof OGClipValue != "undefined" ? true: false; // IF VALID VALUES RETURNED, 
 								if (typeof OGClipValue == "undefined")
-									setOGnames = $.runScript.setMetadataValue(clipItem, "RenameClipOriginal", clipItem.name);
+									setOGnames = $.runScript.setProjectMetadataValue(clipItem, "RenameClipOriginal", clipItem.name);
 								if (typeof OGClipValue == "undefined")
-									setOGnames = $.runScript.setMetadataValue(clipItem, "RenameFileOriginal", theFile.name);
+									setOGnames = $.runScript.setProjectMetadataValue(clipItem, "RenameFileOriginal", theFile.name);
 								if (!setOGnames)
 									errorArray.push([selection[i].start.seconds, "Couldn't add original name metadata."]);
 								// NOW, READ AND PARSE THE NEW NAME 
@@ -597,8 +622,8 @@ $.runScript = {
 									newFilename = renameClipsOnly == 1 ? OGClipValue : OGFileValue;
 								if (renameBy < 3) { // CSV UPLOADED. Parse the metadata first
 									var alreadySetMetadata = false;
-									var clipValue = $.runScript.getMetadataValue(clipItem, "RenameClip");
-									var ridValue = $.runScript.getMetadataValue(clipItem, "RenameRid");
+									var clipValue = $.runScript.getProjectMetadataValue(clipItem, "RenameClip");
+									var ridValue = $.runScript.getProjectMetadataValue(clipItem, "RenameRid");
 									if (typeof clipValue != "undefined" && typeof ridValue != "undefined"){
 										alreadySetMetadata = true;
 									}
@@ -654,9 +679,9 @@ $.runScript = {
 											}
 											if (isFromRidName || isFromClipName){ // the clip was located in the CSV
 												clipValue = nameArray[index] + "." + extension;
-												$.runScript.setMetadataValue(clipItem, "RenameClip", clipValue);
+												$.runScript.setProjectMetadataValue(clipItem, "RenameClip", clipValue);
 												ridValue = "businessinsider_" + ridArray[index] + "_f0." + extension;
-												$.runScript.setMetadataValue(clipItem, "RenameRid", ridValue);
+												$.runScript.setProjectMetadataValue(clipItem, "RenameRid", ridValue);
 												alreadySetMetadata = true;
 											}
 										}
@@ -1100,7 +1125,6 @@ $.runScript = {
 				}
 			} else alert("Failed to import sound to Premiere from: " + downloadedSoundPath);
 		} 
-		else alert("Failed to import sound to Premiere from: " + downloadedSoundPath);
 		return "Failed"
 	},
 
@@ -1131,462 +1155,34 @@ $.runScript = {
 		}
 		
 	},
+
+	getPigeonCredentials: function(){
+		var pathToPreferences = $.runScript.getPreferencesPath() + 'pigeon.json';
+		var finalPath = "";
+		pathComponents = pathToPreferences.split("PPRO_");
+		if (pathComponents.length == 2)
+			finalPath = pathComponents[0] + 'vaporukey.json';
+
+		if (finalPath.length > 0) {
+			var theFile = File(finalPath);
+			if (theFile.exists) {
+				if (theFile.fsName.indexOf('.json')) {
+					theFile.encoding = "UTF8";
+					theFile.open("r", "TEXT", "????");
+					var fileContents = theFile.read();
+					if (fileContents) {
+						return(fileContents);
+					}
+					theFile.close();
+				}
+			}
+		}
+		return "";
+	},
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-	splitScreen : function (ARchoice, numberOfSplits, precompose) {
-		var mainSeq = app.project.activeSequence;
-		app.enableQE();
- 
-		var hPixels = 0; var vPixels = 0;
-		// if it's square with 3 numberofsplits, we're actually splitting two ways with the line going vertically
-		var isSquareSplitUpDown = (ARchoice == "Square" && numberOfSplits) == 3 ? true : false;
-		if (isSquareSplitUpDown)
-			numberOfSplits = 2;
-
-		var seqSettings = mainSeq.getSettings();
-		if (seqSettings && typeof seqSettings != "undefined"){
-			hPixels = seqSettings.videoFrameWidth;
-			vPixels = seqSettings.videoFrameHeight;
-
-			var correctHorizontalDimension = 1080; var correctVerticalDimention = 1080;
-			if (ARchoice == "Wide") correctHorizontalDimension = 1920;
-			if (ARchoice == "Vertical") correctVerticalDimention = 1920;
-
-			// this comp is the right size
-			if (hPixels == correctHorizontalDimension && vPixels == correctVerticalDimention) {
-				//var selection = mainSeq.getSelection();
-
-				var selection = [];
-				var trackNumbers = []; // the track numbers, x, corresponding to mainseq.videoTracks[x], where clips were selected from
-				var clipIndexesinTrack = [] // what index is the clip on, in mainseq.videoTracks[x]?
-				var qeClipIndexesinTrack = []; // same as the above, but indexes for qe DOM instead of fully supported API
-				//THE FOUR ARRAYS ABOVE SHOULD HAVE THE SAME NUMBER OF ITEMS. EACH FIRST ITEM CORRESPONDS TOGETHER, SECOND ITEMS REFER TO THE SAME, ETC
-				for (i = 0; i < mainSeq.videoTracks.numTracks; i++){
-					thisTrack = mainSeq.videoTracks[i];
-					for (j = 0; j < thisTrack.clips.numItems; j++){
-						if (thisTrack.clips[j].isSelected() && thisTrack.clips[j].mediaType == "Video") {
-							selection.push(thisTrack.clips[j]);
-							clipIndexesinTrack.push(j); // so we keep track of where this clip is in the timeline
-							trackNumbers.push(i);
-							break; //don't keep searching once a selection is found on this track.
-						}
-					}
-					thisTrack.setTargeted(false);
-				}				
-				/** we'll need qe DOM later, and qe counts Empty as an track Item.
-				* so, translate the indexes in trackIndexArray to their qe track index equivalents
-				* to make sure you can easily access them later. */ 
-				for (k = 0; k < trackNumbers.length; k++){
-					var trackToFindClip = trackNumbers[k]; // get the first track number with a selected clip on it
-					//alert("there's one selected clip on track " + trackToFindClip)
-					qeTrack = qe.project.getActiveSequence().getVideoTrackAt(trackToFindClip);
-					if (qeTrack){
-						currentClipIndex = 0;
-						for (l = 0; l < qeTrack.numItems; l++) {
-							var qeClip = qeTrack.getItemAt(l);
-							if (qeClip.type == "Clip") {
-								if (currentClipIndex == clipIndexesinTrack[k]) {
-									qeClipIndexesinTrack.push(l)
-									break;
-								}
-								currentClipIndex++;
-							}
-						}
-					}
-				}
-				//alert(trackNumbers.length + ", " + clipIndexesinTrack.length + ", " + qeClipIndexesinTrack.length  + ", " +  selection.length)
-				// alert(clipIndexesinTrack.length + " and " + qeClipIndexesinTrack.length + ". " + clipIndexesinTrack.join(", ") + " becomes " + qeClipIndexesinTrack.join(", "))
-				if (trackNumbers.length == selection.length && clipIndexesinTrack.length == selection.length && qeClipIndexesinTrack.length == selection.length){
-					if (selection.length == numberOfSplits) { // proceed with fitting them to splitscreens
-						// finds the Vaporu bin and selects it, to create subsequence inside it
-						var vaporuBin = $.runScript.searchForBinWithName("Vaporu");
-						if (vaporuBin && typeof vaporuBin != "undefined") vaporuBin.select();
-						else {
-							app.project.rootItem.createBin("Vaporu");
-							vaporuBin = $.runScript.searchForBinWithName("Vaporu");
-							vaporuBin.select();
-						}
-						// count which number of the splits the current video track pertains to
-						var currentSplitNumber = 0;
-						var currentSplitTrackIndex = trackNumbers[0];
-						// nest each sequence and make sure it's the right size
-						for (clipNumber = 0; clipNumber < selection.length; clipNumber++) {
-							var thisClip = selection[clipNumber];
-
-							var trackIndex = trackNumbers[clipNumber];
-							if (typeof trackIndex == "undefined") {
-								alert("Getting trackIndex failed.")
-								return 0;
-							}
-							//update the current split we're on, if it's not the same as the last loop
-							if (trackIndex != currentSplitTrackIndex){
-								currentSplitNumber++;
-								currentSplitTrackIndex = trackIndex;
-							}
-							var clipIndexInTrack = clipIndexesinTrack[clipNumber];
-							if (typeof clipIndexInTrack == "undefined") {
-								alert("getting clipIndexInTrack failed.")
-								return 0;
-							}
-							var originalClipName = thisClip.name;
-							var inPoint = thisClip.start;
-							var outPoint = thisClip.end;
-							mainSeq.setInPoint(inPoint);  
-							mainSeq.setOutPoint(outPoint);
-							// create a nested sequence to better manipulate position
-							if (precompose) { // if the resizing and placing method is to next
-								mainSeq.videoTracks[trackIndex].setTargeted(true)
-								// createSubsequence(false) makes sure we only include the clip on the current track
-								var subSeq = mainSeq.createSubsequence(false);
-								mainSeq.videoTracks[trackIndex].setTargeted(false)
-								var subSeqSettings = subSeq.getSettings();
-								if (subSeqSettings && typeof subSeqSettings != "undefined"){
-									var splitWidth = 0; var splitHeight = 0;
-									//find the right size for these precomps. 
-									if (ARchoice == "Square"){
-										if (numberOfSplits == 4){ splitWidth = 1080; splitHeight = 1080; }
-										if (numberOfSplits == 2) {
-											if (isSquareSplitUpDown) {
-												splitWidth = 1080; splitHeight = 540;
-											}
-											else {
-												splitWidth = 540; splitHeight = 1080;
-											}
-										}
-									}
-									if (ARchoice == "Wide"){
-										splitWidth = 1920/numberOfSplits; splitHeight = 1080;
-									}
-									if (ARchoice == "Vertical"){
-										splitWidth = 1080; splitHeight = 1920/numberOfSplits;
-									}
-									// if subsequence height and width were successfully assigned
-									if (splitWidth > 0 && splitHeight > 0) {
-										subSeqSettings.videoFrameWidth = splitWidth;
-										subSeqSettings.videoFrameHeight = splitHeight;
-										subSeq.setSettings(subSeqSettings);
-										subSeq.projectItem.name = "Split screen " + currentSplitNumber + " (" + originalClipName + ")";
-
-									}
-									mainSeq.videoTracks[trackIndex].overwriteClip(subSeq.projectItem, inPoint)
-									var newClip = mainSeq.videoTracks[trackIndex].clips[clipIndexInTrack];
-									//alert(newClip.name)
-									//clips have been resized, so they're cropped. Now, scale and position them
-									var motionComponentNumber;
-									for (componentNumber = 0; componentNumber < newClip.components.numItems; componentNumber++){
-										if (newClip.components[componentNumber].displayName == "Motion"){
-											motionComponentNumber = componentNumber;
-										}
-									}
-									if (motionComponentNumber != undefined){ // if this clip has a Motion component
-										$.runScript.setSplitTransformProperties(ARchoice, numberOfSplits, currentSplitNumber, false, newClip.components[motionComponentNumber].properties, newClip, isSquareSplitUpDown)	
-									}
-								}
-							} 
-							else { // resizing method is the Transform and Crop effects
-								var qeClipIndex = qeClipIndexesinTrack[clipNumber];
-								//alert("Clip is number " + qeClipIndex + " on track " + trackIndex )
-								var qeTrack = qe.project.getActiveSequence().getVideoTrackAt(trackIndex);
-								if (qeTrack){
-									var qeClip = qeTrack.getItemAt(qeClipIndex);
-									if (qeClip){
-										var transformToAdd = qe.project.getVideoEffectByName("Transform");
-										var cropToAdd = qe.project.getVideoEffectByName("Crop");
-										if (transformToAdd && cropToAdd){
-											qeClip.addVideoEffect(cropToAdd);
-											qeClip.addVideoEffect(transformToAdd);
-											//alert('clip index: ' + clipIndexInTrack + ' track ' + trackIndex)
-
-											var components = thisClip.components;
-											var transformEffect;
-											var cropEffect;
-											//search through the clip's components for the effects  
-											for (componentIndex = 0; componentIndex < components.numItems; componentIndex++){
-												if (components[componentIndex].displayName == "Transform")
-													transformEffect = components[componentIndex];
-												if (components[componentIndex].displayName == "Crop")
-													cropEffect = components[componentIndex];
-											}
-
-											if (typeof transformEffect != 'undefined') {
-												//transformEffect.properties[1].setValue([0.25,0.5], 1);
-												var pos = transformEffect.properties[1].getValue();
-												var scale = transformEffect.properties[3].getValue();
-												//alert("transform: " + pos + ", " + scale)
-
-												$.runScript.setSplitTransformProperties(ARchoice, numberOfSplits, currentSplitNumber, true, transformEffect.properties, thisClip, isSquareSplitUpDown);
-
-
-											}
-											else alert("No transform :(")
-
-											if (typeof cropEffect != 'undefined') {
-												var left = cropEffect.properties[0]   //left
-												var top = cropEffect.properties[1] 	  //top
-												var right = cropEffect.properties[2]  //right
-												var bottom = cropEffect.properties[3] //bottom
-
-												if (ARchoice == "Square"){
-													if (numberOfSplits == 2){ 
-														if (isSquareSplitUpDown){
-															if (currentSplitNumber == 1)
-																bottom.setValue(25)
-															if (currentSplitNumber == 0)
-																top.setValue(25)
-														}
-														else{
-															if (currentSplitNumber == 1)
-																right.setValue(25)
-															if (currentSplitNumber == 0)
-																left.setValue(25)
-														}
-													}
-												}
-												if (ARchoice == "Wide"){
-													// if (numberOfSplits == 2){ splitWidth = 960; splitHeight = 1080; }
-													if (numberOfSplits == 3){ 
-														if (currentSplitNumber == 0)
-															left.setValue(33)
-														if (currentSplitNumber == 1){
-															left.setValue(33)
-															right.setValue(33)
-														}
-														if (currentSplitNumber == 2)
-															right.setValue(33)
-													}
-													if (numberOfSplits == 4){ 
-														if (currentSplitNumber == 0)
-															left.setValue(37.3)
-														if (currentSplitNumber == 1){
-															left.setValue(37.3)
-															right.setValue(37.3)
-														}
-														if (currentSplitNumber == 2) {
-															left.setValue(37.3)
-															right.setValue(37.3)
-														}
-														if (currentSplitNumber == 3)
-															right.setValue(37.3)
-													}
-												}
-
-												if (ARchoice == "Vertical"){
-													if (numberOfSplits == 3){ 
-														if (currentSplitNumber == 2)
-															bottom.setValue(33)
-														if (currentSplitNumber == 1){
-															bottom.setValue(33)
-															top.setValue(33)
-														}
-														if (currentSplitNumber == 0)
-															bottom.setValue(33)
-													}
-													if (numberOfSplits == 4){ 
-														if (currentSplitNumber == 3)
-															bottom.setValue(37.3)
-														if (currentSplitNumber == 2){
-															bottom.setValue(37.3)
-															top.setValue(37.3)
-														}
-														if (currentSplitNumber == 1) {
-															bottom.setValue(37.3)
-															top.setValue(37.3)
-														}
-														if (currentSplitNumber == 0)
-															top.setValue(37.3)
-													}
-												}
-											}
-											else alert("No crop :(")
-										}
-									}
-								}
-							}
-							
-						}
-						var highestTrackNumber = trackNumbers[trackNumbers.length - 1];
-						if (highestTrackNumber < mainSeq.videoTracks.numTracks - 1) { // if there's at least one empty track left
-							var splitTypeIndex;
-							if (ARchoice == "Wide"){
-								if (numberOfSplits == 2) splitTypeIndex = 0;
-								if (numberOfSplits == 3) splitTypeIndex = 1;
-								if (numberOfSplits == 4) splitTypeIndex = 2;
-							}
-							if (ARchoice == "Square"){
-								if (numberOfSplits == 2) {
-									if (isSquareSplitUpDown)
-										splitTypeIndex = 3;
-									else
-										splitTypeIndex = 4;
-								}
-								if (numberOfSplits == 4) splitTypeIndex = 5;
-							}
-							if (ARchoice == "Vertical"){
-								if (numberOfSplits == 2) splitTypeIndex = 6;
-								if (numberOfSplits == 3) splitTypeIndex = 7;
-								if (numberOfSplits == 4) splitTypeIndex = 8;
-							}
-							if (typeof splitTypeIndex != 'undefined')
-								$.runScript.insertSplitScreen(mainSeq.getInPoint(), mainSeq.getOutPoint(), splitTypeIndex, highestTrackNumber + 1)
-						}
-						else alert("There isn't a free layer above your selected clips to add the split screen MOGRT. You can add it yourself.")
-					}
-					else {
-						alert("Please select " + numberOfSplits + " clips in your timeline, all on different video tracks.")
-					}
-				}
-				else alert("Getting data for split screen failed.")
-			}
-			else {
-				var dimensionString = + correctHorizontalDimension + ' x ' + correctVerticalDimention;
-				alert("Use this option in a " + ARchoice + " sequence (dimensions: " + dimensionString + ").");
-			}
-		}
-	},
-
-	setSplitTransformProperties: function (ARchoice, numberOfSplits, splitNumber, isEffect, componentProperties, clip, isSquareSplitUpDown) {
-		var positionIndex = isEffect == false ? 0 : 1; // if this is the Transform effect, its property index is 1
-		var scaleIndex = isEffect == false ? 1 : 3;
-
-		var originalScale;
-		if (isEffect) { // just adjust the scale and anchor point
-			var motionComponentNumber;
-			for (componentNumber = 0; componentNumber < clip.components.numItems; componentNumber++){
-				if (clip.components[componentNumber].displayName == "Motion")
-					motionComponentNumber = componentNumber;
-			}
-			var motionComponent = clip.components[motionComponentNumber];
-			if (motionComponent)
-				originalScale = motionComponent.properties[1].getValue();
-		}
-
-		if (ARchoice == "Square"){
-			if (numberOfSplits == 2) {
-				if (isSquareSplitUpDown){
-					if (splitNumber == 1)
-						componentProperties[positionIndex].setValue([0.5,0.25], 1);
-					if (splitNumber == 0)
-						componentProperties[positionIndex].setValue([0.5,0.75], 1);
-				}
-				else {
-					if (splitNumber == 1)
-						componentProperties[positionIndex].setValue([0.25,0.5], 1);
-					if (splitNumber == 0)
-						componentProperties[positionIndex].setValue([0.75,0.5], 1);
-				}
-			}
-			if (numberOfSplits == 4){ 
-				if (isEffect) { // set horizontal and vertical scale in Transform effect
-					componentProperties[3].setValue(50, 1);
-					componentProperties[4].setValue(50, 1);
-				}
-				else
-					componentProperties[1].setValue(50, 1);
-				if (componentProperties[positionIndex].displayName == "Position"){
-					if (splitNumber == 3)
-						componentProperties[positionIndex].setValue([0.25,0.25], 1);
-					if (splitNumber == 2)
-						componentProperties[positionIndex].setValue([0.75,0.25], 1);
-					if (splitNumber == 1)
-						componentProperties[positionIndex].setValue([0.25,0.75], 1);
-					if (splitNumber == 0)
-						componentProperties[positionIndex].setValue([0.75,0.75], 1);
-				}
-			}
-		}
-		if (ARchoice == "Wide"){
-			if (numberOfSplits == 2){ 
-				if (componentProperties[positionIndex].displayName == "Position"){
-					if (isEffect) { // just adjust the scale and anchor point
-						if (splitNumber == 1)
-							componentProperties[0].setValue([1,0.5], 1);
-						if (splitNumber == 0)
-							componentProperties[0].setValue([0,0.5], 1);
-					}
-					else {
-						if (splitNumber == 1)
-							componentProperties[positionIndex].setValue([0.25,0.5], 1);
-						if (splitNumber == 0)
-							componentProperties[positionIndex].setValue([0.75,0.5], 1);
-					}
-				}
-			}
-			if (numberOfSplits == 3){ 
-				if (componentProperties[positionIndex].displayName == "Position"){
-					if (splitNumber == 2)
-						componentProperties[positionIndex].setValue([0.167,0.5], 1);
-					if (splitNumber == 1)
-						componentProperties[positionIndex].setValue([0.5,0.5], 1);
-					if (splitNumber == 0)
-						componentProperties[positionIndex].setValue([1 - 0.167,0.5], 1);
-				}
-			}
-			if (numberOfSplits == 4){ 
-				if (componentProperties[positionIndex].displayName == "Position"){
-					if (splitNumber == 3)
-						componentProperties[positionIndex].setValue([0.125,0.5], 1);
-					if (splitNumber == 2)
-						componentProperties[positionIndex].setValue([0.375,0.5], 1);
-					if (splitNumber == 1)
-						componentProperties[positionIndex].setValue([.625,0.5], 1);
-					if (splitNumber == 0)
-						componentProperties[positionIndex].setValue([1 - 0.125,0.5], 1);
-				}
-			}
-		}
-		if (ARchoice == "Vertical"){
-			if (numberOfSplits == 2){ 
-				if (componentProperties[positionIndex].displayName == "Position"){
-					if (isEffect) { // just adjust the scale and anchor point
-						if (originalScale && originalScale > 0){
-							var newScale = 89; //shrink a bit to fit the upper tile
-							// set vertical and horizontal scale
-							componentProperties[3].setValue(newScale, 1);
-							componentProperties[4].setValue(newScale, 1);
-							var transformAnchor = componentProperties[0].getValue();
-							if (transformAnchor){
-								if (splitNumber == 1)
-									componentProperties[0].setValue([0.5,0], 1);
-								if (splitNumber == 0)
-									componentProperties[0].setValue([0.5,1], 1);
-							}
-						}
-					}
-					else {
-						if (splitNumber == 1)
-							componentProperties[positionIndex].setValue([0.5,0.25], 1);
-						if (splitNumber == 0)
-							componentProperties[positionIndex].setValue([0.5,0.75], 1);
-					}
-				}
-			}
-			if (numberOfSplits == 3){ 
-				if (componentProperties[positionIndex].displayName == "Position"){
-					if (splitNumber == 2)
-						componentProperties[positionIndex].setValue([0.5, 0.167], 1);
-					if (splitNumber == 1)
-						componentProperties[positionIndex].setValue([0.5,0.5], 1);
-					if (splitNumber == 0)
-						componentProperties[positionIndex].setValue([0.5, 1 - 0.167], 1);
-				}
-			}
-			if (numberOfSplits == 4){ 
-				if (componentProperties[positionIndex].displayName == "Position"){
-					if (splitNumber == 3)
-						componentProperties[positionIndex].setValue([0.5, 0.125], 1);
-					if (splitNumber == 2)
-						componentProperties[positionIndex].setValue([0.5, 0.375], 1);
-					if (splitNumber == 1)
-						componentProperties[positionIndex].setValue([0.5, .625], 1);
-					if (splitNumber == 0)
-						componentProperties[positionIndex].setValue([0.5, 1 - 0.125], 1);
-				}
-			}
-		}
-	},
-
-	splitScreen2 : function (ySplits, xSplits, precompose) {
+	splitScreen : function (ySplits, xSplits, splitMethod) {
 		var mainSeq = app.project.activeSequence;
 		app.enableQE();
 
@@ -1611,27 +1207,40 @@ $.runScript = {
 					}
 				}
 				thisTrack.setTargeted(false);
-			}				
+			}	
+				
 			/** we'll need qe DOM later, and qe counts Empty as an track Item.
 			* so, translate the indexes in trackIndexArray to their qe track index equivalents
 			* to make sure you can easily access them later. */ 
-			for (k = 0; k < trackNumbers.length; k++){
-				var trackToFindClip = trackNumbers[k]; // get the first track number with a selected clip on it
-				//alert("there's one selected clip on track " + trackToFindClip)
-				qeTrack = qe.project.getActiveSequence().getVideoTrackAt(trackToFindClip);
-				if (qeTrack){
-					currentClipIndex = 0;
-					for (l = 0; l < qeTrack.numItems; l++) {
-						var qeClip = qeTrack.getItemAt(l);
-						if (qeClip.type == "Clip") {
-							if (currentClipIndex == clipIndexesinTrack[k]) {
-								qeClipIndexesinTrack.push(l)
-								break;
+			try { 
+				for (k = 0; k < trackNumbers.length; k++){
+					var trackToFindClip = trackNumbers[k]; // get the first track number with a selected clip on it
+					if (typeof trackToFindClip != 'undefined') {
+						var qeSeq = qe.project.getActiveSequence();
+						if (typeof qeSeq != 'undefined'){
+							qeTrack = qeSeq.getVideoTrackAt(trackToFindClip);
+							if (typeof qeTrack != 'undefined'){
+								currentClipIndex = 0;
+								for (l = 0; l < qeTrack.numItems; l++) {
+									var qeClip = qeTrack.getItemAt(l);
+									if (typeof qeClip != "undefined"){
+										if (qeClip.type == "Clip") {
+											if (currentClipIndex == clipIndexesinTrack[k]) {
+												qeClipIndexesinTrack.push(l)
+												break;
+											}
+											currentClipIndex++;
+										}
+									}
+								}
 							}
-							currentClipIndex++;
 						}
 					}
 				}
+			}
+			catch (err){
+				alert("Error creating split screen (issue with QE DOM): " + err)
+				return 0;
 			}
 			if (trackNumbers.length == selection.length && clipIndexesinTrack.length == selection.length && qeClipIndexesinTrack.length == selection.length){
 				if (selection.length == ySplits * xSplits ) { // proceed with fitting them to splitscreens
@@ -1646,6 +1255,7 @@ $.runScript = {
 					// count which number of the splits the current video track pertains to
 					var currentSplitNumber = 0;
 					var currentSplitTrackIndex = trackNumbers[0];
+
 					// nest each sequence and make sure it's the right size
 					for (clipNumber = 0; clipNumber < selection.length; clipNumber++) {
 						var thisClip = selection[clipNumber];
@@ -1667,7 +1277,7 @@ $.runScript = {
 						mainSeq.setInPoint(thisClip.start);  
 						mainSeq.setOutPoint(thisClip.end);
 						// create a nested sequence to better manipulate position
-						if (precompose) { // if the resizing and placing method is to next
+						if (splitMethod == 0) { // if the resizing and placing method is to nest
 							mainSeq.videoTracks[trackIndex].setTargeted(true)
 							var subSeq = mainSeq.createSubsequence(false); // createSubsequence(false) makes sure we only include the clip on the current track
 							mainSeq.videoTracks[trackIndex].setTargeted(false)
@@ -1681,7 +1291,28 @@ $.runScript = {
 									subSeqSettings.videoFrameHeight = splitHeight;
 									subSeq.setSettings(subSeqSettings);
 									subSeq.projectItem.name = "Split screen " + currentSplitNumber + " (" + thisClip.name + ")";
+									// resize the clip. in the new subSeq, it should be the ONLY clip, and it should be on the previously targeted track.
+									var nestedClip = subSeq.videoTracks[trackIndex].clips[0];
+									if (typeof nestedClip != 'undefined') {
+										var ratio = splitHeight/vPixels;
+										if (hPixels/vPixels < splitWidth/splitHeight)
+											ratio = splitWidth/hPixels;
+										//calculate the scale and round up to one decimal place
+										var subScale = Math.ceil(1000 * ratio) / 10;
+
+										var motionComponentNumber;
+										for (componentNumber = 0; componentNumber < nestedClip.components.numItems; componentNumber++){
+											if (nestedClip.components[componentNumber].displayName == "Motion")
+												motionComponentNumber = componentNumber;
+										}
+										if (motionComponentNumber != undefined){ // if this clip has a Motion component
+											var currentScale = nestedClip.components[motionComponentNumber].properties[1].getValue();
+											var newScale = currentScale / (100/subScale);
+											nestedClip.components[motionComponentNumber].properties[1].setValue(newScale, 1);
+										}
+									}
 								}
+								// replace the original clip with the nest in the main sequence
 								mainSeq.videoTracks[trackIndex].overwriteClip(subSeq.projectItem, thisClip.start)
 								var newClip = mainSeq.videoTracks[trackIndex].clips[clipIndexInTrack];
 								//clips have been resized, so they're cropped. Now, scale and position them
@@ -1691,7 +1322,7 @@ $.runScript = {
 										motionComponentNumber = componentNumber;
 								}
 								if (motionComponentNumber != undefined) // if this clip has a Motion component
-									$.runScript.setSplitTransformProperties2(ySplits, xSplits, currentSplitNumber, false, newClip.components[motionComponentNumber].properties, splitWidth, splitHeight, hPixels, vPixels)	
+									$.runScript.setSplitTransformProperties(ySplits, xSplits, currentSplitNumber, false, newClip.components[motionComponentNumber].properties, splitWidth, splitHeight, hPixels, vPixels)	
 							}
 						} 
 						else { // resizing method is the Transform and Crop effects
@@ -1704,7 +1335,8 @@ $.runScript = {
 									var transformToAdd = qe.project.getVideoEffectByName("Transform");
 									var cropToAdd = qe.project.getVideoEffectByName("Crop");
 									if (transformToAdd && cropToAdd){
-										qeClip.addVideoEffect(cropToAdd);
+										if (splitMethod == 1) // only crop if Transform AND Crop selected
+											qeClip.addVideoEffect(cropToAdd);
 										qeClip.addVideoEffect(transformToAdd);
 
 										var components = thisClip.components;
@@ -1734,15 +1366,26 @@ $.runScript = {
 												}
 											}
 										}
+										// get the *actual* height and width of this clip, from its original height/width and its scale
+										var currentScale = 100;
+										var thisClip = mainSeq.videoTracks[trackIndex].clips[clipIndexInTrack];	
+										var motionComponentNumber;
+										for (componentNumber = 0; componentNumber < thisClip.components.numItems; componentNumber++){
+											if (thisClip.components[componentNumber].displayName == "Motion")
+												motionComponentNumber = componentNumber;
+										}
+										if (motionComponentNumber != undefined) // if this clip has a Motion component
+											currentScale = thisClip.components[motionComponentNumber].properties[1].getValue();
+											
+										var currentWidth = originalWidth * (currentScale / 100);
+										var currentHeight = originalHeight * (currentScale / 100);
+
 										// use Fit to Frame algorithm to fit vids into smaller box, then crop the remainder
 										var smallerFrameWidth = hPixels/xSplits; 
 										var smallerFrameHeight = vPixels/ySplits;
-										var ratio = smallerFrameHeight/originalHeight;
-										var cropXNotY = true;
-										if (originalWidth/originalHeight < smallerFrameWidth/smallerFrameHeight){
-											ratio = smallerFrameWidth/originalWidth;
-											cropXNotY = false;
-										}
+										var ratio = smallerFrameHeight/currentHeight;
+										if (currentWidth/currentHeight < smallerFrameWidth/smallerFrameHeight)
+											ratio = smallerFrameWidth/currentWidth;
 										//calculate the scale and round up to one decimal place
 										var newScale = Math.ceil(1000 * ratio) / 10;
 										if (typeof transformEffect != 'undefined') {
@@ -1751,33 +1394,22 @@ $.runScript = {
 												transformEffect.properties[3].setValue(newScale, 1);
 												transformEffect.properties[4].setValue(newScale, 1);
 											}
-
-											var currentScale = 100;
-											var thisClip = mainSeq.videoTracks[trackIndex].clips[clipIndexInTrack];	
-											var motionComponentNumber;
-											for (componentNumber = 0; componentNumber < thisClip.components.numItems; componentNumber++){
-												if (thisClip.components[componentNumber].displayName == "Motion")
-													motionComponentNumber = componentNumber;
-											}
-											if (motionComponentNumber != undefined) // if this clip has a Motion component
-												currentScale = thisClip.components[motionComponentNumber].properties[1].getValue();
-											$.runScript.setSplitTransformProperties2(ySplits, xSplits, currentSplitNumber, true, transformEffect.properties, originalWidth * (currentScale/100), originalHeight * (currentScale/100), hPixels, vPixels);
+											$.runScript.setSplitTransformProperties(ySplits, xSplits, currentSplitNumber, true, transformEffect.properties, currentWidth, currentHeight, hPixels, vPixels);
 										}
-										// and then crop it
-										if (typeof cropEffect != 'undefined') {
+										// and then crop it, if Crop is selected
+										if (splitMethod == 1 && typeof cropEffect != 'undefined') {
 											var left = cropEffect.properties[0]   //left crop effect parameter
 											var top = cropEffect.properties[1] 	  //top
 											var right = cropEffect.properties[2]  //right
 											var bottom = cropEffect.properties[3] //bottom
 											
-											var resizedFrameWidth = originalWidth * newScale/100;
+											var resizedFrameWidth = currentWidth * newScale/100;
 											var lCrop = 100 * ((resizedFrameWidth - smallerFrameWidth)/resizedFrameWidth)/2;
 											var rCrop = lCrop;
-											var resizedFrameHeight = originalHeight * newScale/100;
+											var resizedFrameHeight = currentHeight * newScale/100;
 											var tCrop = 100 * ((resizedFrameHeight - smallerFrameHeight)/resizedFrameHeight)/2;
 											var bCrop = tCrop;
-											// thisClip.name = 'x ' + resizedFrameWidth + ' fit to ' + smallerFrameWidth + ', y ' + resizedFrameHeight +' fit to ' + smallerFrameHeight;
-											// thisClip.name += (' || hpixels: ' + hPixels + ' xSplits' + xSplits + ' vPixels: ' + vPixels  + ' ySplits' + ySplits );
+											
 											if (lCrop > 0 && rCrop > 0){
 												left.setValue(lCrop);
 												right.setValue(rCrop);
@@ -1806,7 +1438,7 @@ $.runScript = {
 		}
 	},
 
-	setSplitTransformProperties2: function (ySplits, xSplits, splitNumber, isEffect, componentProperties, xPixels, yPixels, compWidth, compHeight) {
+	setSplitTransformProperties: function (ySplits, xSplits, splitNumber, isEffect, componentProperties, xPixels, yPixels, compWidth, compHeight) {
 		var positionIndex = isEffect == false ? 0 : 1; // if this is the Transform effect, its property index is 1
 		var numberOfSplits = xSplits * ySplits;
 
@@ -2173,6 +1805,36 @@ $.runScript = {
 		}
 	},
 
+	updateCaptionSplitLength: function (maxLineLength){
+		maxLineLength = parseInt(maxLineLength)
+		if (isNaN(maxLineLength)){
+			alert("Please enter an integer for this feature.")
+			return 0;
+		}
+		var mainSeq = app.project.activeSequence;
+		var selection = mainSeq.getSelection();
+
+		if (selection.length == 0){
+			alert("No MOGRTs selected.");
+			return 0;
+		}
+		for (i = 0; i < selection.length; i++){
+			// for every selected MOGRT
+			if ( selection[i].isMGT() ){
+				var components = selection[i].getMGTComponent();
+				var textComponent = components.properties.getParamForDisplayName("Text");
+				if (textComponent) {
+					var prevTextVal = textComponent.getValue();
+					var formattedCaptionText = $.runScript.AECaptionParse(prevTextVal, maxLineLength);
+					textComponent.setValue(formattedCaptionText, 1);
+				}
+			}
+			else {
+				alert("No MOGRTs selected.");
+			}
+		}
+	},
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
 	saveSRT: function (filename, text) {
@@ -2240,29 +1902,65 @@ $.runScript = {
 			version = versionArray[0] + "." + versionArray[1];
 		// ensure these are arrays
 		if (typeof textArray == "object" && typeof startTimecodesArray == "object" && typeof endTimecodesArray == "object"){
-			for (var i = 0; i < textArray.length; i++){
-				var isFirstCaption = i == 0 ? true : false;
-				if (confirmContinue) {
-					if (parseFloat(version) > 14.0)
-						confirmContinue = $.runScript.insertCaption2020(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
-					else
-						confirmContinue = $.runScript.insertCaption(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
-					//alert(confirmContinue)
-					if (typeof widthArray == "object" && includeMarkers == true){
-						if (parseInt(widthArray[i]) > 150){
-							//alert(widthArray[i])
-							newMarker = mainSequence.markers.createMarker(parseFloat(Math.ceil(startTimecodesArray[i])));
-							newMarker.name = "Vaporu: Captions Alert";
-							// concatenate all the errors
-							newMarker.comments = "This caption may be too long.";
-							newMarker.type = "Chapter";
+			try {
+				var captionProjectItem;
+				for (var i = 0; i < textArray.length; i++){
+					var isFirstCaption = i == 0 ? true : false;
+					if (confirmContinue) {
+						if (parseFloat(version) > 14.0) {
+							captionProjectItem = $.runScript.insertCaption2020(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption, captionProjectItem);
+							if (typeof captionProjectItem == 'undefined') // stop if we don't have a caption item
+								confirmContinue = false;
+						}
+						else
+							confirmContinue = $.runScript.insertCaption(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
+						//alert(confirmContinue)
+						if (typeof widthArray == "object" && includeMarkers == true){
+							if (parseInt(widthArray[i]) > 150){
+								//alert(widthArray[i])
+								newMarker = mainSequence.markers.createMarker(parseFloat(Math.ceil(startTimecodesArray[i])));
+								newMarker.name = "Vaporu: Captions Alert";
+								// concatenate all the errors
+								newMarker.comments = "This caption may be too long.";
+								newMarker.type = "Chapter";
+							}
 						}
 					}
 				}
+				alert("All captions imported!")
 			}
-			alert("All captions imported!")
+			catch (err) {
+				alert('Error adding captions: ' + err)
+			}
 		}
 	},
+
+	getItalicWordIndexes: function (rawText) {
+        var italicIndexes = [];
+        var allWords = rawText.split(" ");
+        currentlyItalic = false;
+        for (i = 0; i < allWords.length; i++){
+            if ($.runScript.stringStartsWith(allWords[i], '<i>'))
+                currentlyItalic = true; // start bold 
+            if ($.runScript.stringStartsWith(allWords[i], '</i>'))
+                currentlyItalic = false; // bold ends before current word 
+            if (currentlyItalic == true)
+                italicIndexes.push(i + 1);
+            if ($.runScript.stringEndsWith(allWords[i], '</i>'))
+                currentlyItalic = false; //end bold
+            if ($.runScript.stringEndsWith(allWords[i], '<i>'))
+                currentlyItalic = true; //next word is bold
+        }
+		var italicString = italicIndexes.join(',');
+        return italicString;
+    },
+
+	stringEndsWith: function(fullString, subString) {
+    	return fullString.substring(fullString.length - subString.length, fullString.length ) === subString;
+  	},
+	stringStartsWith: function(fullString, subString) {
+    	return fullString.substring(0, subString.length ) === subString;
+  	},
 
 	convertMOGRTToSRT: function () {
 		app.enableQE();
@@ -2290,7 +1988,8 @@ $.runScript = {
 							if (textEditValueArray.length > 1 && typeof textEditValueArray[0] != "undefined" )
 								captionText = textEditValueArray[0];
 						}
-						var formattedCaptionText = $.runScript.AECaptionParse(captionText);
+						var maxLineLength = 28;
+						var formattedCaptionText = $.runScript.AECaptionParse(captionText, maxLineLength);
 						var formattedStartTimecode = $.runScript.secondsToTimecode(selection[i].start.seconds);
 						var formattedEndTimecode = $.runScript.secondsToTimecode(selection[i].end.seconds);
 
@@ -2331,10 +2030,9 @@ $.runScript = {
 	},
 
 	// parse text the same way the AE MOGRT comp expression does
-	AECaptionParse: function (inputText){
+	AECaptionParse: function (inputText, maxLineLength){
         // change these default values if they don't match the AE caption MOGRT comp
         var midpointOffset = 0;
-        var maxLineLength = 28;
         var formattedText = "";
         var fullLineWidth = inputText.length;
         var howManyLines = 2;
@@ -2714,193 +2412,188 @@ $.runScript = {
 		var visual = visualOriginal;
 		var visualFileType = "NULLFILETYPE";
 
-		// if producer included filetype, parse it
-		var lastIndex = visualOriginal.lastIndexOf(".");
-		var extension = (visualOriginal.substr(lastIndex + 1)).replace(/\s/g, '');
-		if (extension.length == 3){
-			visualFileType = extension.toLowerCase();
-		}
-		// find the requested clip
-		for (var i = 0; i < mediaBin.children.numItems; i++) {
-			if (mediaBin.children[i].name == visual && mediaBin.children[i].type === 1){
-				visualClip = mediaBin.children[i];
-				break;
+		if (visual == "N/A")
+			errorArray = ["The visual field in the script was left empty here.\n\n"];
+		else {
+			// if producer included filetype, parse it
+			var lastIndex = visualOriginal.lastIndexOf(".");
+			var extension = (visualOriginal.substr(lastIndex + 1)).replace(/\s/g, '');
+			if (extension.length == 3){
+				visualFileType = extension.toLowerCase();
+			}
+
+			var visualWithNoExtension = $.runScript.removeExtensionFromFileName(visual);
+
+			visualClip = $.runScript.getProjItemByName(app.project.rootItem, visualWithNoExtension);
+			if (typeof visualClip == 'string'){
+				errorArray.push(visualWithNoExtension + ": " + visualClip + "\n\n");
+
 			}
 			else {
-				var visualWithNoExtension = visual.split(".");
-				if (visualWithNoExtension.length > 0)
-					visualWithNoExtension = visualWithNoExtension[0];
-				var nameWithNoExtension = mediaBin.children[i].name.split(".");
-				if (nameWithNoExtension.length > 0)
-					nameWithNoExtension = nameWithNoExtension[0];
-				if (visualWithNoExtension == nameWithNoExtension && mediaBin.children[i].type === 1){
-					visualClip = mediaBin.children[i];
-					break;
-				}
-			}
-		}
-
-		try {
-			// if a valid clip was found
-			if (visualClip && typeof visualClip != "undefined"){
-				// check if this is a video or audio clip
-				var clipIsVideo = true;
-				var clipType;
-
-				if (app.isDocumentOpen()) {
-					if (ExternalObject.AdobeXMPScript == undefined) {
-						ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
-					}
-					if (ExternalObject.AdobeXMPScript != undefined) {
-						var projectMetadata = visualClip.getProjectMetadata();
-						var xmp = new XMPMeta(projectMetadata);
-						clipType = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaType")).toString().replace();
-					}
-				}
-				if (clipType && typeof clipType != "undefined"){
-					if (clipType == "Audio")
-						clipIsVideo = false;
-				}
-				if (!clipIsVideo) {
-					videoTrack = mainSequence.audioTracks[0];
-				}
-				//start at the end of previous clip
-				var insertionTime = buildSequenceObject.latestEnd;
-				// if clip has no timecodes, just insert the whole clip
-				var continueInsert = true;
 				try {
-					if (!startTime || typeof startTime == "undefined" || startTime == "NULLSTARTTIME"){
-						// add clip to end of previous clip, starting from first clip
-						visualClip.clearOutPoint();
-						// if it's an image, end it after 3 seconds
-						if (visualFileType == "jpg" || visualFileType == "png"){
-							visualClip.setInPoint(0, 4);
-							visualClip.setOutPoint(3, 4);
-						}
-					}
-					else {
-						startSeconds = $.runScript.timecodeToSeconds(startTime);
-						endSeconds = $.runScript.timecodeToSeconds(endTime);
+					// if a valid clip was found
+					if (visualClip && typeof visualClip != "undefined"){
+						// check if this is a video or audio clip
+						var clipIsVideo = true;
+						var clipType;
 
-						// check that start and end times are valid
-						if (typeof startSeconds != "undefined" && typeof endSeconds != "undefined"){
-							// add clip to the beginning of timeline, starting from last clip
-							visualClip.clearOutPoint();
-							//make sure the endpoint isn't further along than the origina clip's true end
-							var originalOut = visualClip.getOutPoint().seconds;
-							if (endSeconds > originalOut){
-								endSeconds = originalOut;
+						if (app.isDocumentOpen()) {
+							if (ExternalObject.AdobeXMPScript == undefined) {
+								ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
 							}
-							visualClip.setInPoint(startSeconds, 4);
-							visualClip.setOutPoint(endSeconds, 4);
+							if (ExternalObject.AdobeXMPScript != undefined) {
+								var projectMetadata = visualClip.getProjectMetadata();
+								var xmp = new XMPMeta(projectMetadata);
+								clipType = (xmp.getProperty("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", "Column.Intrinsic.MediaType")).toString().replace();
+							}
 						}
-						else {
-							continueInsert = false;
-							errorArray.push(visual + " not inserted. Please convert its timecodes in your script to format (mm:ss) or (hh:mm:ss)\n\n");
+						if (clipType && typeof clipType != "undefined"){
+							if (clipType == "Audio")
+								clipIsVideo = false;
 						}
-					}
-					if (continueInsert){
-						//insert
-						var version = "14.01";
-						var versionArray = app.version.split(".");
-						if (versionArray.length > 1)
-							version = versionArray[0] + "." + versionArray[1];
-
+						if (!clipIsVideo) {
+							videoTrack = mainSequence.audioTracks[0];
+						}
+						//start at the end of previous clip
+						var insertionTime = buildSequenceObject.latestEnd;
+						// if clip has no timecodes, just insert the whole clip
+						var continueInsert = true;
 						try {
-							videoTrack.overwriteClip(visualClip, insertionTime);
-							var lastClipIndex = videoTrack.clips.numItems;				
-							if (lastClipIndex > 0){
-								lastClipIndex = lastClipIndex - 1;
-								buildSequenceObject.latestStart = videoTrack.clips[lastClipIndex].start.seconds;
-								buildSequenceObject.latestEnd = videoTrack.clips[lastClipIndex].end.seconds;
-							}
-						
-							var newEndTime = visualClip.getOutPoint().seconds - visualClip.getInPoint().seconds;
-							
-							try {
-								if (typeof compilationNumber != 'undefined') {
-									if (compilationNumber != "N/A"){
-										$.runScript.insertCompilationNumber(insertionTime, compilationNumber, 4, boldColor);
-									}
+							if (!startTime || typeof startTime == "undefined" || startTime == "NULLSTARTTIME"){
+								// add clip to end of previous clip, starting from first clip
+								visualClip.clearOutPoint();
+								// if it's an image, end it after 3 seconds
+								if (visualFileType == "jpg" || visualFileType == "png"){
+									visualClip.setInPoint(0, 4);
+									visualClip.setOutPoint(3, 4);
 								}
 							}
-							catch (err){
-								return 'Error while adding compilation number (' + err +')'
-							}
-							try {
-								if (mode2 == "true"){
-									if (parseFloat(version) > 14.0)
-										$.runScript.insertCourtesy2020(insertionTime, newEndTime, courtesy, 3);
-									else
-										$.runScript.insertCourtesy(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, courtesy, 3);
-								}
-							}
-							catch (err){
-								return 'Error while adding courtesy (' + err +')'
-							}
-							try {
-								if (mode3 == "true"){
-									if (parseFloat(version) > 14.0){
-										var offsetInsertTime = insertionTime;
-										var offsetEndTime = newEndTime;
-										var insertedTOS = false;
-										if (typeof compilationNumber != 'undefined') {
-											if (compilationNumber != "N/A"){
-												var offsetSeconds = 1.4;
-												if (newEndTime > offsetSeconds) {
-													offsetInsertTime += offsetSeconds;		
-													offsetEndTime -= offsetSeconds;
+							else {
+								startSeconds = $.runScript.timecodeToSeconds(startTime);
+								endSeconds = $.runScript.timecodeToSeconds(endTime);
 
-													var mogrtClip = $.runScript.insertTOS2020(offsetInsertTime, offsetEndTime, theText, 1, boldWords, mode4, boldColor);
-													insertedTOS = true;
-													var components = mogrtClip.components;
-													var opacityEffect;
-													var componentstring = "";
-													//search through the clip's components for the effects  
-													for (componentIndex = 0; componentIndex < components.numItems; componentIndex++){
-														componentstring += components[componentIndex].displayName;
-														if (components[componentIndex].displayName == "Opacity")
-															opacityEffect = components[componentIndex];
-													}
-													if (opacityEffect){
-														var opacityParam = opacityEffect.properties[0];
-														if (opacityParam.displayName == "Opacity") 
-															$.runScript.fadeOpacityIn(opacityParam, 0.4, mogrtClip);
-													}
-												}				
+								// check that start and end times are valid
+								if (typeof startSeconds != "undefined" && typeof endSeconds != "undefined"){
+									// add clip to the beginning of timeline, starting from last clip
+									visualClip.clearOutPoint();
+									//make sure the endpoint isn't further along than the origina clip's true end
+									var originalOut = visualClip.getOutPoint().seconds;
+									if (endSeconds > originalOut){
+										endSeconds = originalOut;
+									}
+									visualClip.setInPoint(startSeconds, 4);
+									visualClip.setOutPoint(endSeconds, 4);
+								}
+								else {
+									continueInsert = false;
+									errorArray.push(visual + " not inserted. Please convert its timecodes in your script to format (mm:ss) or (hh:mm:ss)\n\n");
+								}
+							}
+							if (continueInsert){
+								//insert
+								var version = "14.01";
+								var versionArray = app.version.split(".");
+								if (versionArray.length > 1)
+									version = versionArray[0] + "." + versionArray[1];
+
+								try {
+									videoTrack.overwriteClip(visualClip, insertionTime);
+									var lastClipIndex = videoTrack.clips.numItems;				
+									if (lastClipIndex > 0){
+										lastClipIndex = lastClipIndex - 1;
+										buildSequenceObject.latestStart = videoTrack.clips[lastClipIndex].start.seconds;
+										buildSequenceObject.latestEnd = videoTrack.clips[lastClipIndex].end.seconds;
+									}
+								
+									var newEndTime = visualClip.getOutPoint().seconds - visualClip.getInPoint().seconds;
+									
+									try {
+										if (typeof compilationNumber != 'undefined') {
+											if (compilationNumber != "N/A" && typeof mainSequence.videoTracks[4] != 'undefined'){
+												$.runScript.insertCompilationNumber(insertionTime, compilationNumber, 4, boldColor);
 											}
 										}
-										if (insertedTOS == false)
-											$.runScript.insertTOS2020(insertionTime, newEndTime, theText, 1, boldWords, mode4, boldColor);
 									}
-									else
-										$.runScript.insertTOS(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, theText, 1);
+									catch (err){
+										return 'Error while adding compilation number (' + err +')'
+									}
+									try {
+										if (mode2 == "true" && typeof mainSequence.videoTracks[3] != 'undefined'){
+											if (parseFloat(version) > 14.0){
+												$.runScript.insertCourtesy2020(insertionTime, newEndTime, courtesy, 3);
+											}
+											else {
+												$.runScript.insertCourtesy(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, courtesy, 3);
+											}
+										}
+									}
+									catch (err){
+										return 'Error while adding courtesy (' + err +' version ' + parseFloat(version)+ ')'
+									}
+									try {
+										if (mode3 == "true" && typeof mainSequence.videoTracks[1] != 'undefined'){
+											if (parseFloat(version) > 14.0){
+												var offsetInsertTime = insertionTime;
+												var offsetEndTime = newEndTime;
+												var insertedTOS = false;
+												if (typeof compilationNumber != 'undefined') {
+													if (compilationNumber != "N/A"){
+														var offsetSeconds = 1.4;
+														if (newEndTime > offsetSeconds) {
+															offsetInsertTime += offsetSeconds;		
+															offsetEndTime -= offsetSeconds;
+
+															var mogrtClip = $.runScript.insertTOS2020(offsetInsertTime, offsetEndTime, theText, 1, boldWords, mode4, boldColor);
+															insertedTOS = true;
+															var components = mogrtClip.components;
+															var opacityEffect;
+															var componentstring = "";
+															//search through the clip's components for the effects  
+															for (componentIndex = 0; componentIndex < components.numItems; componentIndex++){
+																componentstring += components[componentIndex].displayName;
+																if (components[componentIndex].displayName == "Opacity")
+																	opacityEffect = components[componentIndex];
+															}
+															if (opacityEffect){
+																var opacityParam = opacityEffect.properties[0];
+																if (opacityParam.displayName == "Opacity") 
+																	$.runScript.fadeOpacityIn(opacityParam, 0.4, mogrtClip);
+															}
+														}				
+													}
+												}
+												if (insertedTOS == false)
+													$.runScript.insertTOS2020(insertionTime, newEndTime, theText, 1, boldWords, mode4, boldColor);
+											}
+											else
+												$.runScript.insertTOS(buildSequenceObject.latestStart, buildSequenceObject.latestEnd, theText, 1);
+										}
+									}
+									catch (err){
+										return 'Error while adding TOS (' + err +')'
+									}
 								}
-							}
-							catch (err){
-								return 'Error while adding TOS (' + err +')'
+								catch (err){
+									return 'Error while adding clip to timeline (' + err +')'
+								}
 							}
 						}
 						catch (err){
-							return 'Error while adding clip to timeline (' + err +')'
+							return 'Error while processing projectItem (' + err +')'
 						}
+							
+					}
+					else {
+						// insert a marker to alert user of bad clip
+						errorArray.push(visual + " not inserted. No media in your project matched that filename.\n\n");
 					}
 				}
 				catch (err){
-					return 'Error while processing projectItem (' + err +')'
+					return 'Error while finding clip (' + err +')'
 				}
-					
 			}
-			else {
-				// insert a marker to alert user of bad clip
-				errorArray.push(visual + " not inserted. No media in your project matched that filename.\n\n");
-			}
-		}
-		catch (err){
-			return 'Error while finding clip (' + err +')'
 		}
 		
-	
 		if (errorArray.length >= 1) {
 			// add new marker or append its comments to the previous one if it's also at time = 0, to avoid stacking markers
 			var newMarker;
@@ -2908,7 +2601,7 @@ $.runScript = {
 			// if there's a previous marker, and if it's at time = 0, set selected marker to that one
 			var insertionSeconds = 0;
 			if (buildSequenceObject.latestEnd != 0){
-				insertionSeconds = buildSequenceObject.latestEnd.seconds;
+				insertionSeconds = buildSequenceObject.latestEnd;
 			}
 			if (mainSequence.markers.numMarkers > 0){
 				var testLastMarker = mainSequence.markers.getLastMarker();
@@ -3431,6 +3124,7 @@ $.runScript = {
 	},
 
 	insertCourtesy2020: function (insertTime, endTime, TOSText, vidTrack) {
+		vidTrack -= 1;
 		if (TOSText == "NULLCOURTESY")
 			return 0;
 		app.enableQE();
@@ -3470,6 +3164,7 @@ $.runScript = {
 						break;
 					}
 				}
+
 				if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
 					newMOGRT.remove(false,true);
 				// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
@@ -3482,15 +3177,15 @@ $.runScript = {
 					vidTrackItem.overwriteClip(TOSProjectItem, insertTime);
 					newMOGRT = vidTrackItem.clips[originalNumberOfClips];
 
+
 					if (newMOGRT && newMOGRT != "undefined"){
-						//newMOGRT.setSelected(1,1);
 						var components = newMOGRT.getMGTComponent();
-						for (var i = 2; i < 6; i++) {
-							//alert(i);
-							components.properties[i].setValue(0, 1);
-						}
+						// set all current logos to 0. took this off for v3.2
+						// for (var i = 2; i < 7; i++) 
+						// 	components.properties[i].setValue(0, 1);
 						// parse the input for type 
 						var courtesyElements = (TOSText.split(")")[0]).split("(");
+						//alert('2')
 						if (courtesyElements && courtesyElements.length == 2){
 							var logoIndex;
 							var logoType = courtesyElements[1].toLowerCase();
@@ -3504,19 +3199,23 @@ $.runScript = {
 							if (logoType.charAt(0) == "f"){
 									logoIndex = 4;
 							}
-							if (logoType.charAt(0) == "t"){
+							if (logoType.charAt(0) == "t" && logoType.charAt(1) == "w"){
 									logoIndex = 5;
 							}
 							if (logoType.charAt(0) == "s"){
 									logoIndex = 6;
 							}
+							if (logoType.charAt(0) == "t" && logoType.charAt(1) == "i" && logoType.charAt(2) == "k"){
+									logoIndex = 7;
+							}
 							//components.properties[logoIndex].setValue(true);
 							components.properties[logoIndex].setValue(true, 1);
 							// set the courtesy text
+							components.properties.getParamForDisplayName("Courtesy Text").setValue(courtesyElements[0], 1);
+						}
+						else {
 							components.properties.getParamForDisplayName("Courtesy Text").setValue(TOSText, 1);
 						}
-						else 
-							components.properties.getParamForDisplayName("Courtesy Text").setValue(TOSText, 1);
 
 						//set to square version if that's the sequence
 						var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
@@ -3537,12 +3236,12 @@ $.runScript = {
 		app.enableQE();
 		var mainSequence = app.project.activeSequence;
 		var confirmDelete = false;
+		
 
 		// if NULLTEXT, don't add it 
 		if (captionText && typeof captionText != "undefined"){
 			var captionProjectItem;
 			var newMOGRT;
-
 			// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
 			app.project.rootItem.select();
 			// check to see if the Captions MOGRT already exists 
@@ -3628,108 +3327,150 @@ $.runScript = {
 		return confirmDelete;
 	},
 
-	insertCaption2020: function (insertTime, endTime, captionText, vidTrack, isFirstCaption) {
+	insertCaption2020: function (insertTime, endTime, captionText, vidTrack, isFirstCaption, captionProjectItem) {
 		app.enableQE();
 		var mainSequence = app.project.activeSequence;
-		var confirmDelete = false;
 
 		// if NULLTEXT, don't add it 
 		if (captionText && typeof captionText != "undefined"){
-			var captionProjectItem;
-			var newMOGRT;
-
-			// set the insertion bin to the root item, to prevent MOGRTBins in other nested bins
-			app.project.rootItem.select();
-			// check to see if the Captions MOGRT already exists 
-			var MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption_2020"){
-						captionProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				// mogrt bin exists but the Captions .aegraphic doesn't
-				if (!captionProjectItem || typeof captionProjectItem == "undefined")
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
-			}
-			// choose the mogrt bin. if it doesn't exist, create it
-			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
-				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
-			}
-			// if after adding the MOGRT, we now have the mogrt bin
-			if (typeof MOGRTBin != "undefined"){
-				// go through the mogrt bin and find the Caption 
-				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption_2020"){
-						captionProjectItem = MOGRTBin.children[i];
-						break;
-					}
-				}
-				if (newMOGRT && newMOGRT != "undefined") // remove the temporarily added newMOGRT
-					newMOGRT.remove(false,true);
-				// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
-				if (captionProjectItem && typeof captionProjectItem != "undefined"){
-					var vidTrackItem = mainSequence.videoTracks[vidTrack];
-					//delete everything on the top track, then insert captions
-					if (isFirstCaption){
-						//alert("first caption and" + vidTrackItem.clips.numItems) 
-						if (vidTrackItem.clips.numItems != 0){
-							confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
-							if (confirmDelete){
-								while (vidTrackItem.clips.numItems > 0){
-									vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
-								}
+			if (typeof captionProjectItem == 'undefined') // find the project Item for the caption, if it hasn't been passed in
+				captionProjectItem = $.runScript.getOrCreateMOGRT(app.project.rootItem, "Caption_2020", vidTrack);
+			if (typeof captionProjectItem != "undefined"){
+				var vidTrackItem = mainSequence.videoTracks[vidTrack];
+				//delete everything on the top track, then insert captions
+				if (isFirstCaption){
+					//alert("first caption and" + vidTrackItem.clips.numItems) 
+					if (vidTrackItem.clips.numItems != 0){
+						confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
+						if (confirmDelete){
+							while (vidTrackItem.clips.numItems > 0){
+								vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
 							}
-							else // user decided to not proceed with insertion
-								return 0
 						}
-						else
-							confirmDelete = true;
+						else // user decided to not proceed with insertion
+							return 0
 					}
 					else
 						confirmDelete = true;
-						
-					if (confirmDelete == true) {
-						var newTime = new Time();
-						newTime.seconds = endTime - insertTime; // for AE 2020, use a Time object, not seconds
-						captionProjectItem.setOutPoint(newTime, 1);
+				}
+				else
+					confirmDelete = true;
+					
+				if (confirmDelete == true) {
+					var newTime = new Time();
+					newTime.seconds = endTime - insertTime; // for AE 2020, use a Time object, not seconds
+					captionProjectItem.setOutPoint(newTime, 1);
 
-						var originalNumberOfClips = vidTrackItem.clips.numItems;
-						vidTrackItem.insertClip(captionProjectItem, parseFloat(insertTime));
-						newMOGRT = vidTrackItem.clips[originalNumberOfClips];
+					var originalNumberOfClips = vidTrackItem.clips.numItems;
+					vidTrackItem.insertClip(captionProjectItem, parseFloat(insertTime));
+					newMOGRT = vidTrackItem.clips[originalNumberOfClips];
 
-						if (newMOGRT && newMOGRT != "undefined"){
-							//newMOGRT.setSelected(1,1);
-							var formattedCaptionText = $.runScript.AECaptionParse(captionText);
-							var components = newMOGRT.getMGTComponent();
-							components.properties.getParamForDisplayName("Text").setValue(formattedCaptionText, 1);
-							//set to square version if that's the sequence
-							var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
-							var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
-							if (seqAR == 1)
-								mogrtAR.setValue(2);
-							else if (seqAR == 9/16) 
-								mogrtAR.setValue(3);
+					if (newMOGRT && newMOGRT != "undefined"){
+						//newMOGRT.setSelected(1,1);
+						var maxLineLength = 28;
+						var modifiedText = captionText.replace(/<i>/g, '').replace(/<\/i>/g, '').replace(/--/g, '—');
+
+						var formattedCaptionText = $.runScript.AECaptionParse(modifiedText, maxLineLength);
+						var components = newMOGRT.getMGTComponent();
+						// replace double hyphens with emdashes, and remove the italics tags
+						components.properties.getParamForDisplayName("Text").setValue(formattedCaptionText, 1);
+						var italicWords = $.runScript.getItalicWordIndexes(captionText);
+
+						newMOGRT.name = modifiedText.replace(/\n/g, '');
+						if (italicWords.length > 0)
+							components.properties.getParamForDisplayName("Italic Words").setValue(italicWords, 1);
+						//set to square version if that's the sequence
+						var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
+						var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
+						if (seqAR == 1)
+							mogrtAR.setValue(2);
+						else if (seqAR == 9/16) 
+							mogrtAR.setValue(3);
+					}
+				}
+			}
+			else{
+				alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
+				confirmDelete = false;
+			}
+			
+		}
+		return captionProjectItem;
+	},
+
+	getOrCreateMOGRT : function (parentBin, nameToFind, vidTrack) {
+		var mainSequence = app.project.activeSequence;
+		var mogrtProjectItem = $.runScript.findMOGRT(parentBin, nameToFind);
+		var newMOGRT;
+
+		if (typeof mogrtProjectItem == "undefined") {
+			newMOGRT = mainSequence.importMGTFromLibrary("Insider", nameToFind, 0, vidTrack, 1);
+			mogrtProjectItem = newMOGRT.projectItem;
+		}
+		if (typeof newMOGRT != "undefined"){ // remove the temporarily added newMOGRT
+			newMOGRT.remove(false,true);
+		}
+		return mogrtProjectItem;
+	},
+
+	findMOGRT: function (parentBin, nameToFind) {
+		var projectItem = null;
+
+        for (var i = 0; i < parentBin.children.numItems; i++) {
+            var currentChild = parentBin.children[i];
+            if (currentChild.type == 2)
+                deepSearch(currentChild);
+			else if (currentChild.type == 1) {
+				if (currentChild.name == nameToFind){
+					if ($.runScript.projItemIsMOGRT(currentChild)) 
+						projectItem = currentChild;
+				}
+            }
+        }
+        return projectItem;
+
+        function deepSearch(bin) {
+            for (var i = 0; i < bin.children.numItems; i++) {
+				var currentChild = bin.children[i];
+                if (currentChild.type == 2) { 
+                    for (var j = 0; j < currentChild.children.numItems; j++) {
+                        var newChild = currentChild.children[j];
+                        if (newChild.type == 2)
+							deepSearch(newChild);
+						else if (newChild.type == 1) {
+							if (newChild.name == nameToFind) {
+								if ($.runScript.projItemIsMOGRT(newChild)) {
+									projectItem = newChild;
+									break;
+								}
+							}
+						}
+                    }
+                } 
+				else if (currentChild.type == 1) {
+					if (currentChild.name == nameToFind) {
+						if ($.runScript.projItemIsMOGRT(currentChild)) {
+							projectItem = currentChild;
+							break;
 						}
 					}
 				}
-				else{
-					alert('You have multiple "Motion Graphics Template Media" bins in your project. Make sure you only have one, then try again.')
-					confirmDelete = false;
-				}
-			}
-		}
-		return confirmDelete;
+            }
+        }
+    },
+
+	projItemIsMOGRT : function (projItem) {
+		var path = projItem.getMediaPath();
+		var extension = path.slice(path.length - 9)
+		if (extension === "aegraphic")
+			return true;
+		return false;
 	},
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------------
 
 	initSequences: function (branding) {
 		app.enableQE;
-
 
 		var sequencesBin = $.runScript.searchForBinWithName("Sequences");
 		var wideOriginalName = "Insider_[ProjectNameehere]_16X9_V1";
@@ -4001,7 +3742,7 @@ $.runScript = {
 						if (selection[i].projectItem.canChangeMediaPath()){
 							// BEFORE DOING ANYTHING, ADD THE ORIGINAL FILE PATH TO CLIP ITEM'S METADATA
 							var originalMediaPath = selection[i].projectItem.getMediaPath();
-							setOGpath = $.runScript.setMetadataValue(selection[i].projectItem, "TranscodeOriginalPath", originalMediaPath);
+							setOGpath = $.runScript.setProjectMetadataValue(selection[i].projectItem, "TranscodeOriginalPath", originalMediaPath);
 							if (File(originalMediaPath).exists) {
 								nameWithoutExtension = File(originalMediaPath).displayName;
 								var lastIndex = nameWithoutExtension.lastIndexOf(".");
@@ -4299,24 +4040,119 @@ $.runScript = {
 			return totalSeconds;
 		},
 
-		// function from Premiere CEP panel
-		searchForBinWithName: function(nameToFind) {
-			// deep-search a folder by name in project
-			var deepSearchBin = function (inFolder) {
-				if (inFolder && inFolder.name === nameToFind && inFolder.type === 2) {
-					return inFolder;
-				} else {
-					for (var i = 0; i < inFolder.children.numItems; i++) {
-						if (inFolder.children[i] && inFolder.children[i].type === 2) {
-							var foundBin = deepSearchBin(inFolder.children[i]);
-							if (foundBin) {
-								return foundBin;
+	// function from Premiere CEP panel
+	searchForBinWithName: function(nameToFind) {
+		// deep-search a folder by name in project
+		var deepSearchBin = function (inFolder) {
+			if (inFolder && inFolder.name === nameToFind && inFolder.type === 2) {
+				return inFolder;
+			} else {
+				for (var i = 0; i < inFolder.children.numItems; i++) {
+					if (inFolder.children[i] && inFolder.children[i].type === 2) {
+						var foundBin = deepSearchBin(inFolder.children[i]);
+						if (foundBin) {
+							return foundBin;
+						}
+					}
+				}
+			}
+		};
+		return deepSearchBin(app.project.rootItem);
+	},
+
+	searchBinForProjItemByName : function (parentBin, name) {
+
+		var searchString = parentBin.name + '\n' + "Looking for " + name + " in " + parentBin.name;
+		var spaceString = "";
+		var deepSearch = function (i, containingBin, nameToFind) {
+			searchString += "...";
+			spaceString += "  "
+			for (var j = i; j < containingBin.children.numItems; j++) {
+				var currentChild = containingBin.children[j];
+				searchString += '\n' + spaceString + containingBin.name + ' / ' + currentChild.name + ' > ';
+				if (currentChild) {
+					if (currentChild.type == 2) 
+						return deepSearch(0, currentChild, nameToFind); // warning; recursion!
+					else {
+						var nameWithNoExtension = currentChild.name.toLowerCase().replace(/^\s+|\s+$/gm,'');
+						var lastIndex2 = nameWithNoExtension.lastIndexOf(".");
+						if (lastIndex2 > -1)
+							nameWithNoExtension = (nameWithNoExtension.substr(0, lastIndex2));
+						if (nameWithNoExtension == nameToFind) {
+							return currentChild;
+						} 
+						else {
+							searchString += 'NOT ' + nameWithNoExtension;
+							try {
+								//return deepSearch(j + 1, containingBin, nameToFind);
+								var nextChild = containingBin.children[j + 1];
+								if (nextChild) {
+									return deepSearch(j + 1, containingBin, nameToFind);
+								}
+							}
+							catch (err) {
+								return searchString + " FAILED ON " + currentChild.name + ": " + err;
 							}
 						}
 					}
 				}
-			};
-			return deepSearchBin(app.project.rootItem);
-		}
+			}
+			return searchString;
+		};
+		return deepSearch(0, parentBin, 'clip');
+	},
+
+	getProjItemByName: function (parentBin, nameToFind) {
+		var projectItem;
+
+        for (var i = 0; i < parentBin.children.numItems; i++) {
+            var currentChild = parentBin.children[i];
+			var nameWithNoExtension = $.runScript.removeExtensionFromFileName(currentChild.name)
+            if (currentChild.type == 2)
+                deepSearch(currentChild);
+			else if (currentChild.type == 1) {
+				if (nameWithNoExtension == nameToFind) 
+					projectItem = currentChild;
+            }
+        }
+        return projectItem;
+
+        function deepSearch(bin) {
+            for (var i = 0; i < bin.children.numItems; i++) {
+				var currentChild = bin.children[i];
+				var nameWithNoExtension = $.runScript.removeExtensionFromFileName(currentChild.name);
+
+                if (currentChild.type == 2) { 
+                    for (var j = 0; j < currentChild.children.numItems; j++) {
+                        var newChild = currentChild.children[j];
+						var newNameWithNoExtension = $.runScript.removeExtensionFromFileName(newChild.name);
+                        if (newChild.type == 2)
+							deepSearch(newChild);
+						else if (newChild.type == 1) {
+							if (newNameWithNoExtension == nameToFind) {
+								projectItem = newChild;
+								break;
+							}
+						}
+                    }
+                } 
+				else if (currentChild.type == 1) {
+					if (nameWithNoExtension == nameToFind) {
+						projectItem = currentChild;
+						break;
+					}
+				}
+            }
+        }
+    },
+
+	removeExtensionFromFileName: function(name){
+		var nameWithNoExtension = name.toLowerCase().replace(/^\s+|\s+$/gm,'');
+		var lastIndex = nameWithNoExtension.lastIndexOf(".");
+		if (lastIndex > -1)
+			nameWithNoExtension = (nameWithNoExtension.substr(0, lastIndex));
+		return nameWithNoExtension;
+	}
+
 
 }

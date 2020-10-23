@@ -300,19 +300,29 @@
 			</div>
 			<hr class="hrMini" size="0.5" color="#121212">
 			<div>
-				<div id="txtToMOGRTBox">
-					<div class="form-Text">Text to MOGRT:</div>
-				</div>
-				<span class="interfaceComponent">Type:</span>
+				
+				<div id='txtToMOGRTBox' class='noMargin'>Text to MOGRT:</div>
 				<span class="interfaceComponent">
-					<select id="mogrtTypeOptions">
-						<option value="TOS">TOS</option>
-						<option value="Courtesy">Courtesy</option>
-					</select>
+					<span class="interfaceComponent">Type:</span>
+					<span class="interfaceComponent">
+						<select id="mogrtTypeOptions">
+							<option value="TOS">TOS</option>
+							<option value="Courtesy">Courtesy</option>
+						</select>
+					</span>
+					<span class="interfaceComponent"> Track:<select id="MOGRTTrackOptions"></select></span>
 				</span>
-				<span class="interfaceComponent"> Track:<select id="MOGRTTrackOptions"></select></span>
+				<span class="interfaceComponent"><input id="convertToMOGRTButton" type="submit" value="Convert"></span>	
 			</div>
-			<span><input id="convertToMOGRTButton" type="submit" value="Convert"></span>
+			<hr class="hrMini" size="0.5" color="#121212">
+			<div id="captionSplitLengthParent">
+				<div>Captions Line Breaks:</div>
+				<span class='interfaceComponent'>Split if over </span> 
+				<input class='interfaceComponent' id="updateCaptionsLengthInput" type="text" name="vertical" maxlength="3" value="28">
+				<span class="interfaceComponent"> characters</span>
+
+				<input class='interfaceComponent' id="updateCaptionsLengthButton" type="submit" value="Update">
+			</div>
 		</div>
 
 
@@ -481,8 +491,9 @@
 			<div id='splitScreenMethodContainer'>
 				Method: 
 				<select id="splitScreenMethod">
-					<option value="nest">Nest (Precompose)</option>
-					<option value="effect">Transform & Crop</option>
+					<option value="1">Transform & Crop</option>
+					<option value="2">Transform</option>
+					<option value="0">Nest (Precompose)</option>
 				</select>
 			</div>
 			<div>
@@ -517,23 +528,6 @@
 					</div>
 				</span>
 			</div>
-			<div  class='splitContainerBig' id='splitScreenOptionsSquare'>
-				<span class='splitContainer'>
-					<div class='whiteBgSquare'>
-						<img class="splitOption" id="splitSquareLeftRight2" src="./images/squareHorizontal2.png">				
-					</div>
-				</span>
-				<span class='splitContainer'>
-					<div class='whiteBgSquare'>
-						<img class="splitOption" id="splitSquareUpDown2" src="./images/squareVertical2.png">				
-					</div>
-				</span>
-				<span class='splitContainer'>
-					<div class='whiteBgSquare'>
-						<img class="splitOption" id="splitSquare4" src="./images/square4.png">				
-					</div>
-				</span>
-			</div>
 			<div  class='splitContainerBig' id='splitScreenOptionsVertical'>
 				<span class='splitContainer'>
 					<div class='whiteBgVertical'>
@@ -550,6 +544,11 @@
 						<img class="splitOption" id="splitVertical4" src="./images/vertical4.png">				
 					</div>
 				</span>
+				<span class='splitContainer'>
+					<div class='whiteBgSquare'>
+						<img class="splitOption" id="splitSquare4" src="./images/square4.png">				
+					</div>
+				</span>
 			</div>
 		</div>
 
@@ -564,10 +563,13 @@
 					<input id="pigeonPass" type="password" placeholder="Enter password" name="psw" required>
 					<button id="loginButton" type="submit">Login</button>
 				</span>
-				<div id="pigeonLoginErrorMessage">Invalid login. Contact @atraviezo if you need an account.</div>
+				<div id="pigeonLoginErrorMessage">Invalid login. Contact @atraviezo for help logging in.</div>
 				<div class="spinnerContainer">
 					<div id="loadingSpinner1"></i></div>
 				</div>
+			</div>
+			<div class="spinnerContainer">
+				<div id="loadingSpinner3"></i></div>
 			</div>
 			<div id='pigeonWindow'>
 				<div id='pigeonHead'>
@@ -582,30 +584,31 @@
 					</span>
 				</div>
 				<div id='audioSearchControls'>
-					<span>
+					Search libraries:
+					<div id='audioSearchLibraryOptions'><i>loading options...</i></div>
+
+					Sort results by:
+					<select name="Order Options" id="audioLibrarySearchOrder">
+						<option value="fileName asc">Name</option>
+						<option value="duration asc">Duration</option>
+					</select>
+					<div>
 						<div class="form-Text">Import to track: </div>
 						<select id="audioResultTrackOptions"></select>
 						<input id="audioResultImport" class="form-Text" type="checkbox" checked='checked'>
-					</span>
+					</div>
 				</div>
 
 				<div id='searchResultsNumberContainer'>
-					<span id='searchResultsNumber'>0</span> sounds found.
+					Showing <span id='searchResultsVisibleNumber'>0</span> of <span id='searchResultsTotalNumber'>0</span> results.
 				</div>
-
+				<div id='searchResultsNoLibraries'>No libraries chosen. Please pick at least one to search through.</div>
 				<div class="spinnerContainer">
 					<div id="loadingSpinner2"></i></div>
 				</div>
 				
 				<div id='searchResultsWindow'>
-					<table id="audioResults">
-						<!--
-						<div class=searchResult id="searchResultsHeader">
-                            <span class=searchResultName>Name</span>
-                            <span class=searchResultDuration>Duration</span>
-						</div>
-						-->
-					</table>
+					<table id="audioResults"></table>
 				</div>
 			</div>
 

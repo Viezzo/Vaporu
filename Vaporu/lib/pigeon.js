@@ -6,7 +6,24 @@ $(document).ready(function() {
         downloadURL : ""
     }
 
-    //setAudioTrackOptions();
+    window.queryResults = {
+        hiddenResults : [],
+        lastVisibleDoc : undefined,
+        lastChosenLibraries : undefined,
+        lastOrderBy : undefined,
+        lastAscOrDesc : undefined
+    }
+
+    window.pigeonStatus = {
+        hasBeenOpened : false
+    }
+    
+    // if audio library is already opened on panel load, set it up
+    if ($("#pigeonButton").css("background-color") != "rgba(0, 0, 0, 0)") {
+        startPigeon();
+        setAudioTrackOptions();
+        window.pigeonStatus.hasBeenOpened = true;
+    }
 
     function setAudioTrackOptions(){
         var cs = new CSInterface;	
@@ -40,10 +57,15 @@ $(document).ready(function() {
     $("#pigeonButton").click(function(){
         $("#pigeonControls").slideToggle();
         var originalColor = $(this).css("background-color");
-        if (originalColor == "rgba(0, 0, 0, 0)"){
+        if (originalColor == "rgba(0, 0, 0, 0)"){ // open the panel
             $(this).animate({backgroundColor: "rgba(0, 0, 0, .3)"}, 300);
             $(this).css("background-color", "rgba(0, 0, 0, .3)");
-            checkIfConnected();
+            // if this is the first time the audio library app is being opened
+            if (window.pigeonStatus.hasBeenOpened == false) {
+                startPigeon();
+                setAudioTrackOptions();
+                window.pigeonStatus.hasBeenOpened = true;
+            }
         }
         else {
             $(this).animate({backgroundColor: "rgba(0, 0, 0, 0)"}, 300);
@@ -58,27 +80,41 @@ $(document).ready(function() {
     });
 
     $("#audioSearchControlsButton").click(function(){
-        if ($("#audioSearchControls").css('display') == "none")
-            setAudioTrackOptions();
+        if ($("#audioSearchControls").css('display') == "none"){
+            // setAudioTrackOptions();
+        }
         $("#audioSearchControls").slideToggle();
     });
 
-    $("#searchSoundsButton").click(function(){
-        var searchTag = $("#audioSearch").val();
-        var defaultTable = '<tr id="audioResultsHeader"><th>ID</th><th>Name</th></tr>'
-        $('#audioResults').empty(); 
-        $('#audioResults').append(defaultTable);
-        queryForTag(searchTag);
-    });
-
+    // search when something new is typed 
     $("#audioSearch").on("input", function(){
         var searchTag = $("#audioSearch").val();
-        // var defaultTable = '<tr id="audioResultsHeader"><th>Name</th><th>Duration</th></tr>'
-        $('#audioResults').empty(); 
-        // $('#audioResults').append(defaultTable);
+        if (searchTag.length > 0) 
+            queryForNewTag(searchTag, getChosenLibraries());
+    });
+ 
+    // search when sort order is changed
+    $("#audioLibrarySearchOrder").on("change", function(){
+        var searchTag = $("#audioSearch").val();
+        if (searchTag.length > 0) 
+            queryForNewTag(searchTag, getChosenLibraries());
+    });
+
+    // search when audio library changes
+    $(document).on('click', '.audioLibraryChoice', function(event){ 
+        var bgColor = $(this).css("background-color");
+        if (bgColor == "rgb(64, 64, 64)"){
+            $(this).css("background-color","rgba(0, 0, 0, 0)");
+            $(this).css("color","rgb(150, 150, 150)");
+        }
+        else{
+            $(this).css("background-color","rgb(64, 64, 64)");
+            $(this).css("color","white");
+        }
+        var searchTag = $("#audioSearch").val();
         if (searchTag.length > 0) {
             $('#loadingSpinner2').addClass('spinner');
-            queryForTag(searchTag);
+            queryForNewTag(searchTag, getChosenLibraries());
         }
     });
 
@@ -91,7 +127,6 @@ $(document).ready(function() {
         else { // clicking on the sound to preview it
             var fileName = $(this).attr("data-name");
             if (window.selectedAudio.previousID.length > 0)
-                //('#' + window.selectedAudio.previousID).css("background-color", "rgba(0, 0, 0, 0)"); // make background transparent
                 $('#' + window.selectedAudio.previousID).css("border","1px solid #303030"); // make background transparent
 
             if ($(this).attr('id') == window.selectedAudio.previousID) {
@@ -107,7 +142,6 @@ $(document).ready(function() {
                 window.selectedAudio.previousID = $(this).attr('id');
             }
         }
-
     });
 
     async function getSoundURL(aacName, play){
@@ -115,14 +149,12 @@ $(document).ready(function() {
         var aacRef = storageRef.child(aacName);
         await aacRef.getDownloadURL().then(function(url) {
             if (play){
-                //var audioPreviewLink = '<audio id="audioPlayer" class="mejs__player"><source src="' + url + '" type="audio/aac"></audio>'
-                //$('#audioPlayerContainer').empty();
                 var player = document.getElementById("audioPlayer"); 
                 player.setSrc(url);
                 player.play(); 
             }
             window.selectedAudio.downloadURL = url;
-        }).catch(function(error) { alert(error) });
+        }).catch(function(error) { alert('Error getting the download link for that sound. Please report it to @atraviezo.') });
     }
 
     async function downloadSound(downloadButton){
@@ -171,37 +203,7 @@ $(document).ready(function() {
                             var blob = xhr.response;
                             var fullFilePath = soundFolderPath + "/" + aacFileName;
                             await writeBlobToFile(blob, fullFilePath);
-                        //~~~~~ INSERT TO PREMIERE ~~~~~~~  
-                            var selectedTrack = 1;
-                            var doInsert = $('#audioResultImport').prop('checked');
-                            selectedTrack = $('#audioResultTrackOptions').val();
-                            cs.evalScript('$.runScript.pigeonInsertSound(' 
-                            + JSON.stringify(selectedTrack) + ','
-                            + JSON.stringify(fullFilePath) + ','
-                            + JSON.stringify(doInsert) + ','
-                            + JSON.stringify(aacFileName) + 
-                            ')', function(returnString){
-                                if (typeof returnString == 'string') { // folder name returned
-                                    if (returnString == "Imported") {
-                                        downloadButton.css("color", 'rgba(89, 255, 117, 1)');
-                                        downloadButton.next().html('<i>File imported.</i>');
-                                        downloadButton.next().css("color", 'rgba(89, 255, 117, 1)');
-                                        setTimeout(function(){
-                                            downloadButton.next().slideUp();
-                                        }, 1500);
-                                    }
-                                    else if (returnString == "Imported but failed to insert") {
-                                        downloadButton.css("color", "rgba(255, 214, 89, 1)");
-                                        downloadButton.next().html("<i>Imported but couldn't insert to track</i>");
-                                        downloadButton.next().css("color", '"rgba(255, 214, 89, 1)"');
-                                    }
-                                    else {
-                                        downloadButton.css("color", 'rgba(255, 103, 89, 1');
-                                        downloadButton.next().html('<i>' + returnString + '</i>');
-                                        downloadButton.next().css("color", 'rgba(255, 103, 89, 1');
-                                    }
-                                }
-                            });
+                            insertToPremiere(fullFilePath, aacFileName, downloadButton);
                         };
                         xhr.open('GET', aacUrl);
                         xhr.send();
@@ -209,6 +211,67 @@ $(document).ready(function() {
                 });
             });
         }
+    }
+
+    function insertToPremiere(fullFilePath, aacFileName, downloadButton) {
+        var selectedTrack = 1;
+        var doInsert = $('#audioResultImport').prop('checked');
+        selectedTrack = $('#audioResultTrackOptions').val();
+        var cs = new CSInterface;	
+        cs.evalScript('$.runScript.pigeonInsertSound(' 
+        + JSON.stringify(selectedTrack) + ','
+        + JSON.stringify(fullFilePath) + ','
+        + JSON.stringify(doInsert) + ','
+        + JSON.stringify(aacFileName) + 
+        ')', function(returnString){
+            if (typeof returnString == 'string') { // folder name returned
+                if (returnString == "Imported") {
+                    downloadButton.css("color", 'rgba(89, 255, 117, 1)');
+                    downloadButton.next().html('<i>File imported.</i>');
+                    downloadButton.next().css("color", 'rgba(89, 255, 117, 1)');
+                    setTimeout(function(){
+                        downloadButton.next().slideUp();
+                    }, 1500);
+                }
+                else if (returnString == "Imported but failed to insert") {
+                    downloadButton.css("color", "rgba(255, 214, 89, 1)");
+                    downloadButton.next().html("<i>Imported but couldn't insert to track</i>");
+                    downloadButton.next().css("color", '"rgba(255, 214, 89, 1)"');
+                }
+                else { //try getting it again - could just take a second for the file to appear
+                    setTimeout(function(){  // wait half a second for the file to appear. If it doesn't, proceed
+                        cs.evalScript('$.runScript.pigeonInsertSound(' 
+                        + JSON.stringify(selectedTrack) + ','
+                        + JSON.stringify(fullFilePath) + ','
+                        + JSON.stringify(doInsert) + ','
+                        + JSON.stringify(aacFileName) + 
+                        ')', function(returnString){
+                            if (typeof returnString == 'string') { // folder name returned
+                                if (returnString == "Imported") {
+                                    downloadButton.css("color", 'rgba(89, 255, 117, 1)');
+                                    downloadButton.next().html('<i>File imported.</i>');
+                                    downloadButton.next().css("color", 'rgba(89, 255, 117, 1)');
+                                    setTimeout(function(){
+                                        downloadButton.next().slideUp();
+                                    }, 1500);
+                                }
+                                else if (returnString == "Imported but failed to insert") {
+                                    downloadButton.css("color", "rgba(255, 214, 89, 1)");
+                                    downloadButton.next().html("<i>Imported but couldn't insert to track</i>");
+                                    downloadButton.next().css("color", '"rgba(255, 214, 89, 1)"');
+                                }
+                                else {
+                                    alert("Failed to import sound. Couldn't find the file at: " + fullFilePath);
+                                    downloadButton.css("color", 'rgba(255, 103, 89, 1');
+                                    downloadButton.next().html('<i>' + returnString + '</i>');
+                                    downloadButton.next().css("color", 'rgba(255, 103, 89, 1');
+                                }
+                            }
+                        });
+                    }, 500); // wait half a second, then try again
+                }
+            }
+        });
     }
 
     async function writeBlobToFile(blob, fileName) {
@@ -226,73 +289,31 @@ $(document).ready(function() {
         reader.readAsDataURL(blob);
     }
 
+    function startPigeon() {
+        $("#pigeonLogin").hide();
+        $('#loadingSpinner3').addClass('spinner');
 
-    async function updateFileProgress(filePath, finalSize) {
+        var cs = new CSInterface;	
+        cs.evalScript('$.runScript.getPigeonCredentials()', function(returnString){
+            try {
+                if (typeof returnString == "string" && returnString.length > 0){
+                    var theJSON = JSON.parse(returnString)
+                    var a = theJSON.email;
+                    var b = theJSON.password;
+                    $("#pigeonUser").val(a);
+                    $("#pigeonPass").val(b);
 
-        // $( function() { $( "#audioDownloadProgressbar" ).progressbar({ 
-        //     value: 0,
-        //     create: function(event, ui) {$(this).find('.ui-widget-header').css({'background-color':'blue'})}
-        // }); });
-        var timerId = setInterval(() =>  updateFileProgress2(fileName, blob.size), 1000);
-        setTimeout(() => { clearInterval(timerId); alert('stop'); }, 0);
-    }
-
-    async function updateFileProgress2(filePath, finalSize) {
-        var result = window.cep.fs.readFile(filePath);
-        if (result.err == 0) {
-            var filesize = result.size;
-            if (typeof filesize != 'undefined') {
-                if (blob.size == finalSize) {
-                    return;
+                    connectToPigeon()
                 }
-                else {
-                    var progress = filesize/ finalSize;
-                    $( function() { $( "#audioDownloadProgressbar" ).progressbar({ value: progress }); });        
-                }
-            }}
-        else {
-            alert("failed to read file");
-        }
-    }
-
-    function checkIfConnected() {
-
-        console.log('checking if logged in already');
-        if (firebase.apps.length > 0) {  
-            firebase.auth().onAuthStateChanged(user => {
-                if (user) {
-                  console.log('user exists.')
-                } else {
-                    console.log('user does not exist.')
-                }
-            });
-        }
-        else 
-            console.log('firebase not initialized yet')
-
-            firebase.auth().onAuthStateChanged(user => {
-                if (user) {
-                  console.log('user exists.')
-                } else {
-                    console.log('user does not exist.')
-                }
-            });
-
-        // firebase.auth().onAuthStateChanged(function(user) {
-        //     console.log('authstatechange')
-        //     if (user) {
-        //         console.log('authstatechange')
-        //     }
-        // });
-        //console.log(typeof firebase.auth())
+            }
+            catch (error) {
+                alert(error);
+            }
+        });
     }
 
     function connectToPigeon(){
-        // Your web app's Firebase configuration
-        console.log(firebase)
-
         if (!firebase.apps.length) {  
-            console.log('new login')      
             var firebaseConfig = {
                 apiKey: "AIzaSyARENKSyVVw79cVQL7w-HeznyqYG4JcQxk",
                 authDomain: "pigeon-e3d56.firebaseapp.com",
@@ -307,63 +328,249 @@ $(document).ready(function() {
             firebase.initializeApp(firebaseConfig);
         }
 
-        email = $("#pigeonUser").val();
-        password = $("#pigeonPass").val();
+        var a = $("#pigeonUser").val();
+        var b = $("#pigeonPass").val();
 
-        firebase.auth().signInWithEmailAndPassword(email, password).then(function(firebaseUser) {
+        firebase.auth().signInWithEmailAndPassword(a, b).then(function(firebaseUser) {
             $("#pigeonLogin").hide();
             $("#pigeonWindow").show();
             $('#loadingSpinner1').removeClass('spinner');
-
-            console.log('ok in. user:')
-            console.log(firebaseUser)
-
+            $('#loadingSpinner3').removeClass('spinner');
 
             $('#audioPlayer').mediaelementplayer({
                 defaultAudioWidth: '250',
                 stretching: 'none',
-                //features:['current','progress', 'duration'],
                 features:['playpause','progress', 'current']
             });
+
+            setSearchOptions();
             
         }).catch(function(error) { 
+            $("#pigeonLogin").show();
             $('#loadingSpinner1').removeClass('spinner');
+            $('#loadingSpinner3').removeClass('spinner');
             $('#pigeonLoginErrorMessage').show();
-
-            //alert(error)
         });
     }
 
-
-    function queryForTag(tag) {
+    // if a new library is added, manually add it as a new doc's ID in pigeon Cloud Firestore > existingLibraryNames
+    function setSearchOptions() {
         var db = firebase.firestore();
-        
-        db.collection("audioMasterLibrary").where("tags", "array-contains", tag.toLowerCase())
-            .get()
+        var libraryNames = [];
+        db.collection("existingLibraryNames").get()
             .then(function(querySnapshot) {
-            $("#searchResultsNumberContainer").show();
-            $("#searchResultsNumber").text(querySnapshot.size);
                 querySnapshot.forEach(function(doc) {
-                    var resultName = doc.data().fileName;
-                    // if (resultName.length > 60)
-                    //     resultName = resultName.substring(0, 60) + "...";
-                    $('#audioResults').append( 
-                        "<div class=searchResult " +
-                        "id=" + doc.id +
-                        " data-name='" + doc.data().fileName + "'>" +
-                            "<span class=searchResultName>" + 
-                                resultName + "</span>" +
-                            "<span class=searchResultDuration>" + 
-                                doc.data().duration + "</span>" +
-                            "<span class=searchResultDownloadingMessage><i class='fas fa-arrow-alt-circle-down'></i></span>" +
-                            "<div class=searchResultStatusMessage><i>" + 'Downloading...' + "</i></div>" +
-                        "</div>");
+                    libraryNames.push(doc.id);
                 });
-                $('#loadingSpinner2').removeClass('spinner');
-
+                $("#audioSearchLibraryOptions").empty();
+                for (i = 0; i < libraryNames.length; i++) {
+                    var newLibraryElement = '<span class="audioLibraryChoice">' + libraryNames[i] + '</span>'
+                    $('#audioSearchLibraryOptions').append(newLibraryElement);
+                }
             })
             .catch(function(error) {
-                console.log("Error getting documents: " + error);
+                console.log("Error getting Library options: " + error);
         });
+    }
+
+    function getChosenLibraries(){
+        var chosenLibraries = [];
+        $('.audioLibraryChoice').each(function() {
+            if ($(this).css("background-color") == "rgb(64, 64, 64)")
+                chosenLibraries.push($(this).text())
+        });
+        return chosenLibraries;
+    }
+
+    function executeQuery(tag, chosenLibraries, orderBy, ascOrDesc, searchLimit, lastVisibleDoc, newSearch) {
+        // only query if we have libraries to search in
+        if (chosenLibraries.length == 0){
+            $('#audioResults').empty(); 
+            $("#searchResultsNoLibraries").show();
+            $('#loadingSpinner2').removeClass('spinner');
+            return 0;
+        }
+        $("#searchResultsNoLibraries").hide();
+        $('#loadingSpinner2').addClass('spinner');
+
+        var db = firebase.firestore();
+        // initiate query
+        if (newSearch == true){
+            if (tag.trim() == '') {
+                db.collection("audioMasterLibrary")
+                    .where("library", "in", chosenLibraries)
+                    .orderBy(orderBy, ascOrDesc)
+                    .limit(searchLimit)
+                    .get()
+                    .then(function(querySnapshot) {
+                        $("#searchResultsVisibleNumber").text(0);
+                        $('#audioResults').empty(); 
+                        querySnapshot.forEach(function(doc) {
+                            addSearchResultFromDoc(doc);
+                        });
+                        lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length-1];
+                        refreshLatestQueryResults(lastVisibleDoc, tag, chosenLibraries, orderBy, ascOrDesc, querySnapshot.size);    
+                    })
+                    .catch(function(error) {
+                        console.log("Error getting documents: " + error);
+                });
+
+                // get the size of the search result
+                db.collection("audioMasterLibrary")
+                    .where("library", "in", chosenLibraries)
+                    .get()
+                    .then(function(querySnapshot) {
+                        $("#searchResultsTotalNumber").text(querySnapshot.size);
+                    })
+                    .catch(function(error) {
+                        console.log("Error getting documents: " + error);
+                });
+            }
+            else {
+                db.collection("audioMasterLibrary")
+                .where("tags", "array-contains", tag.toLowerCase())
+                .where("library", "in", chosenLibraries)
+                .orderBy(orderBy, ascOrDesc)
+                .limit(searchLimit)
+                .get()
+                    .then(function(querySnapshot) {
+                        $("#searchResultsVisibleNumber").text(0);
+                        $('#audioResults').empty(); 
+                        querySnapshot.forEach(function(doc) {
+                            addSearchResultFromDoc(doc);
+                        });
+                        var lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length-1];
+                        refreshLatestQueryResults(lastVisibleDoc, tag, chosenLibraries, orderBy, ascOrDesc, querySnapshot.size);    
+                    })
+                    .catch(function(error) {
+                        console.log("Error getting documents: " + error);
+                    });
+                    // get the size of the search result
+                    db.collection("audioMasterLibrary")
+                    .where("tags", "array-contains", tag.toLowerCase())
+                    .where("library", "in", chosenLibraries)
+                    .get()
+                    .then(function(querySnapshot) {
+                        $("#searchResultsTotalNumber").text(querySnapshot.size);
+                    })
+                    .catch(function(error) {
+                        console.log("Error getting documents: " + error);
+                });
+            }
+        }
+        else { // continue to paginate query results. same as above, but with startAfter
+            if (typeof lastVisibleDoc != 'undefined'){
+                if (tag.trim() == '') {
+                    db.collection("audioMasterLibrary")
+                        .where("library", "in", chosenLibraries)
+                        .orderBy(orderBy, ascOrDesc)
+                        .limit(searchLimit)
+                        .startAfter(lastVisibleDoc)
+                        .get()
+                        .then(function(querySnapshot) {
+                            querySnapshot.forEach(function(doc) {
+                                addSearchResultFromDoc(doc);
+                            });
+                            var lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length-1];
+                            refreshLatestQueryResults(lastVisibleDoc, tag, chosenLibraries, orderBy, ascOrDesc, querySnapshot.size);    
+                        })
+                        .catch(function(error) {
+                            console.log("Error getting documents: " + error);
+                    });
+                }
+                else {
+                    db.collection("audioMasterLibrary")
+                    .where("tags", "array-contains", tag.toLowerCase())
+                    .where("library", "in", chosenLibraries)
+                    .orderBy(orderBy, ascOrDesc)
+                    .startAfter(lastVisibleDoc)
+                    .limit(searchLimit)
+                    .get()
+                    .then(function(querySnapshot) {
+                            querySnapshot.forEach(function(doc) {
+                                addSearchResultFromDoc(doc);
+                            });
+                            var lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length-1];
+                            refreshLatestQueryResults(lastVisibleDoc, tag, chosenLibraries, orderBy, ascOrDesc, querySnapshot.size);    
+                        })
+                        .catch(function(error) {
+                            console.log("Error getting documents: " + error);
+                        });
+                }
+            }
+            else {
+                console.log('ERROR. No last visible document available to start from.')
+            }
+        }
+    }
+
+    function refreshLatestQueryResults(lastVisibleDoc, tag, chosenLibraries, orderBy, ascOrDesc, queryResultSize) {
+        window.queryResults.lastVisibleDoc = lastVisibleDoc;                
+        window.queryResults.lastSearchTag = tag;
+        window.queryResults.lastChosenLibraries = chosenLibraries;
+        window.queryResults.lastOrderBy = orderBy;
+        window.queryResults.lastAscOrDesc = ascOrDesc;
+
+        var currentDisplayingNumber = parseInt($("#searchResultsVisibleNumber").text());
+        $("#searchResultsVisibleNumber").text(currentDisplayingNumber + queryResultSize);
+        $('#loadingSpinner2').removeClass('spinner');
+    }
+
+    function queryForNewTag(tag, chosenLibraries) {
+        var orderBy = "fileName";
+        var ascOrDesc = "asc";
+
+        var audioSearchVal = $("#audioLibrarySearchOrder").val();
+        if (audioSearchVal){
+            var audioSearchOrder = audioSearchVal.split(' ');
+            if (audioSearchOrder.length == 2){
+                orderBy = audioSearchOrder[0] == "fileName" ? "fileName" : "duration";
+                ascOrDesc = audioSearchOrder[1] == "asc" ? 'asc': "desc";
+            }
+        }
+        var searchLimit = 100;
+        executeQuery(tag, chosenLibraries, orderBy, ascOrDesc, searchLimit, undefined, true)
+    }
+
+    function addResultsOnScroll(){
+        var lastVisibleDoc = window.queryResults.lastVisibleDoc;
+        var tag = window.queryResults.lastSearchTag;
+        var chosenLibraries = window.queryResults.lastChosenLibraries;
+        var orderBy = window.queryResults.lastOrderBy;
+        var ascOrDesc = window.queryResults.lastAscOrDesc;
+
+        var currentlyShownResults = parseInt($("#searchResultsVisibleNumber").text());
+        var totalResults = parseInt($("#searchResultsTotalNumber").text());
+        if (totalResults > currentlyShownResults){ // only query again if we haven't found all the files
+            if (typeof ascOrDesc != 'undefined' && 
+            typeof orderBy != 'undefined' && 
+            typeof chosenLibraries != 'undefined' && 
+            typeof tag != 'undefined' && 
+            typeof lastVisibleDoc != 'undefined') {
+                var searchLimit = 100;
+                executeQuery(tag, chosenLibraries, orderBy, ascOrDesc, searchLimit, lastVisibleDoc, false)
+            }
+        }
+    }
+
+    $("#searchResultsWindow").scroll(function (e) {
+        var elem = $(e.currentTarget);
+        if (elem[0].scrollHeight - elem.scrollTop() - elem.outerHeight() < 1) 
+            addResultsOnScroll();
+    });
+
+    function addSearchResultFromDoc(doc){
+        var resultName = doc.data().fileName;
+        $('#audioResults').append( 
+            "<div class=searchResult " +
+            "id=" + doc.id +
+            " data-name='" + doc.data().fileName + "'>" +
+                "<span class=searchResultName>" + 
+                    resultName + "</span>" +
+                "<span class=searchResultDuration>" + 
+                    doc.data().duration + "</span>" +
+                "<span class=searchResultDownloadingMessage><i class='fas fa-arrow-alt-circle-down'></i></span>" +
+                "<div class=searchResultStatusMessage><i>" + 'Downloading...' + "</i></div>" +
+            "</div>");
     }
 });

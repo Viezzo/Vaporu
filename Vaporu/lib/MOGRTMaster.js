@@ -105,5 +105,13 @@ $(document).ready(function() {
         });
     });
 
+    $("#updateCaptionsLengthButton").click(function(){
+        var characterNumber = $("#updateCaptionsLengthInput").val();
+
+        var cs = new CSInterface;
+        cs.evalScript('$.runScript.updateCaptionSplitLength(' + JSON.stringify(characterNumber) +')');
+    });
+    
+
 });
 
