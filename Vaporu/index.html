@@ -111,38 +111,47 @@
 		<div id="updateWarning"></div>
 
 		<div id="appButtons" class="row">
+
 			<div class="column">
-				<img class="appButton" id="segmentExporterButton" data-appName="segmentExporterControls" src="./images/segment_exporter.png">
-				<img class="appButton" id="fullExporterButton" data-appName="fullExporterControls" src="./images/full_exporter.png">
+				<img class="appButton" id="scriptImporterButton" data-appName="scriptImporterControls" src="./images/script_importer.png">
 				<img class="appButton" id="srtImporterButton" data-appName="srtImporterControls" src="./images/captions_converter.png">
-				<img class="appButton" id="thumbExportButton" data-appName="thumbExportControls" src="./images/thumbnail_export.png">
-				<img class="appButton" id="transcodeButton" data-appName="transcodeControls" src="./images/transcode.png">
-				<img class="appButton" id="splitScreenButton" data-appName="splitScreenApp" src="./images/split_screen.png">
+				<img class="appButton" id="reframeMOGRTButton" data-appName="reframeMOGRTControls" src="./images/mogrt_master.png">
+				<img class="appButton" id="fitToSequenceButton" data-appName="reframeClipsControls" src="./images/fit_to_sequence.png">
+				<img class="appButton" id="exporterButton" data-appName="exportControls" src="./images/export_video.png">
 			</div>
 			<div class="column">
-				<img class="appButton" id="fitToSequenceButton" data-appName="reframeClipsControls" src="./images/fit_to_sequence.png">
-				<img class="appButton" id="reframeMOGRTButton" data-appName="reframeMOGRTControls" src="./images/mogrt_master.png">
-				<img class="appButton" id="scriptImporterButton" data-appName="scriptImporterControls" src="./images/script_importer.png">
 				<img class="appButton" id="projectToolsButton" data-appName="projectToolsControls" src="./images/project_tools.png">
 				<img class="appButton" id="colorPalettesButton" data-appName="colorPalettesApp" src="./images/color_palettes.png">
+				<img class="appButton" id="transcodeButton" data-appName="transcodeControls" src="./images/transcode.png">
 				<img class="appButton" id="pigeonButton" data-appName="pigeonControls" src="./images/audio_library.png">
-
+				<img class="appButton" id="splitScreenButton" data-appName="splitScreenApp" src="./images/split_screen.png">
+				<!--<img class="appButton" id="thumbExportButton" data-appName="thumbExportControls" src="./images/thumbnail_export.png">-->
+				<!--<img class="appButton" id="fullExporterButton" data-appName="fullExporterControls" src="./images/full_exporter.png">-->
 			</div>
 		</div>
 		<hr size="0.5" color="black">
 
 		
-		<div class="app" id="segmentExporterControls">
-			<div id="landing" display="hidden"> 
-				<a href="#" data-toggle="exporterRefreshTooltip" title="Refresh"><i class="fas fa-sync-alt" id="exportRefreshButton"></i></a>
-				<select id="exportPresetOptions">
-					<option value="HQ">HQ</option>
-					<option value="FAST">Fast</option>
-				</select>
-				<a href="#" data-toggle="runExporterTooltip" title="Run Exporter" id="runExporterButton" onclick="runSegmentExporter()" ><i class="fas fa-play"></i></a>
+		<div class="app" id="exportControls">
+
+			<div id='fullExporterControls' class='noMargin'>
+				<div>Export full video:</div>
+				<input class="interfaceComponent" id="exportPreviewButton" type="submit" value="Review">
+				<input class="interfaceComponent" id="exportHiResButton" type="submit" value="Final">
+				<hr class="hrPadding" size="0.5" color="black">
 			</div>
-			<span class="interfaceComponent">
-				<div id="controls">
+
+			<div id='segmentExporterControls' class='noMargin'>
+				<div>Snapchat Segments:</div>
+				<div id="landing" display="hidden"> 
+					<a href="#" data-toggle="exporterRefreshTooltip" title="Refresh"><i class="fas fa-sync-alt" id="exportRefreshButton"></i></a>
+					<select id="exportPresetOptions">
+						<option value="HQ">HQ</option>
+						<option value="FAST">Fast</option>
+					</select>
+					<a href="#" data-toggle="runExporterTooltip" title="Run Exporter" id="runExporterButton" onclick="runSegmentExporter()" ><i class="fas fa-play"></i></a>
+				</div>
+				<span>
 					<span id="audioTrackSelect">
 							Audio Track:
 							<select id="audioTrackOptions" size="1">
@@ -160,45 +169,68 @@
 							</select>
 						</span>
 					</div>
-				</div>
-			</span>
-			<hr size="0.5" color="black">
+				</span>
+				<hr size="0.5" color="black">
+			</div>
+
+			<div id='thumbExportControls' class='noMargin'>
+				<div>Thumbnail export:</div>
+				<form>
+					<span class=“thumbOptionsContainer”>
+						<input id="horizontalThumbPixels" type="text" name="horizontal" maxlength="4" value="540">
+						<div class="form-Text">x </div>
+						<input id="verticalThumbPixels" type="text" name="vertical" maxlength="4" value="900">
+					</span>
+	
+					<span id="thumbExportDetails">
+						<div class="form-Text">Lock to:</div>
+						<select id="thumbAROptions">
+								<option value="WIDE">16:9</option>
+								<option value="SQUARE">1:1</option>
+								<option value="VERTICAL">9:16</option>
+						</select>
+						<input id="lockAR" class="form-Text" type="checkbox" name="lockAR" value="lockAR">
+					</span>
+				</form>
+	
+				<input id="thumbExporter" type="submit" value="Export">
+				<hr class="hrPadding" size="0.5" color="black">
+			</div>
+
 		</div>
 
+		<!--
 		<div class="app" id="fullExporterControls">
 			Export: 
 			<input class="interfaceComponent" id="exportPreviewButton" type="submit" value="Review">
 			<input class="interfaceComponent" id="exportHiResButton" type="submit" value="Final">
-			<!--<div>
-				<div class="form-Text">
-					Name:
-					<input class="interfaceComponent" id="fullExportSequenceName" type="text" name="sequenceName" value=""> .mp4
-				</div>
-				Preset:
-				<select class="interfaceComponent" id="fullExportPreset">
-					<option value="1">Insider</option>
-					<option value="2">BIT</option>
-				</select>
-				
-			</div> -->
-			<!--
-			<div>
-				Review settings:
-				<select class="interfaceComponent" id="exportPreviewPreset">
-					<option value="1">16:9</option>
-					<option value="2">1:1</option>
-				</select>
-			</div>
-			<div>
-				Final settings:
-				<select class="interfaceComponent" id="exportHiResPreset">
-					<option value="WIDE">16:9</option>
-					<option value="SQUARE">1:1</option>
-					<option value="VERTICAL">9:16</option>
-				</select>
-			</div>-->
 			<hr class="hrPadding" size="0.5" color="black">
 		</div>
+
+		<div class="app" id="thumbExportControls">
+			<form>
+				<span class=“thumbOptionsContainer”>
+					<input id="horizontalThumbPixels" type="text" name="horizontal" maxlength="4" value="540">
+					<div class="form-Text">x </div>
+					<input id="verticalThumbPixels" type="text" name="vertical" maxlength="4" value="900">
+				</span>
+
+				<span id="thumbExportDetails">
+					<div class="form-Text">Lock to:</div>
+					<select id="thumbAROptions">
+							<option value="WIDE">16:9</option>
+							<option value="SQUARE">1:1</option>
+							<option value="VERTICAL">9:16</option>
+					</select>
+					<input id="lockAR" class="form-Text" type="checkbox" name="lockAR" value="lockAR">
+				</span>
+			</form>
+
+			<input id="thumbExporter" type="submit" value="Export">
+			<hr class="hrPadding" size="0.5" color="black">
+		</div>
+		-->
+
 
 		<div class="app" id="srtImporterControls">
 			<div id="srtHolder">
@@ -228,30 +260,6 @@
 				<div class="form-Text">Selected MOGRT:</div>
 			</div>
 			<input id="MOGRTToSRT" type="submit" value="MOGRT to SRT">
-			<hr class="hrPadding" size="0.5" color="black">
-		</div>
-
-
-		<div class="app" id="thumbExportControls">
-			<form>
-				<span class=“thumbOptionsContainer”>
-					<input id="horizontalThumbPixels" type="text" name="horizontal" maxlength="4" value="540">
-					<div class="form-Text">x </div>
-					<input id="verticalThumbPixels" type="text" name="vertical" maxlength="4" value="900">
-				</span>
-
-				<span id="thumbExportDetails">
-					<div class="form-Text">Lock to:</div>
-					<select id="thumbAROptions">
-							<option value="WIDE">16:9</option>
-							<option value="SQUARE">1:1</option>
-							<option value="VERTICAL">9:16</option>
-					</select>
-					<input id="lockAR" class="form-Text" type="checkbox" name="lockAR" value="lockAR">
-				</span>
-			</form>
-
-			<input id="thumbExporter" type="submit" value="Export">
 			<hr class="hrPadding" size="0.5" color="black">
 		</div>
 

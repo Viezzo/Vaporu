@@ -221,8 +221,9 @@ $(document).ready(function() {
       //$("#runExporterTooltip").css("visibility", "hidden");
   });
 
-  $("#segmentExporterButton").click(function(){
-      $("#segmentExporterControls").slideToggle();
+  $("#exporterButton").click(function(){
+    
+      $("#exportControls").slideToggle();
       var originalColor = $(this).css("background-color");
       if (originalColor == "rgba(0, 0, 0, 0)"){
         $(this).animate({backgroundColor: "rgba(0, 0, 0, .3)"}, 300);
@@ -232,6 +233,33 @@ $(document).ready(function() {
         $(this).animate({backgroundColor: "rgba(0, 0, 0, 0)"}, 300);
         $(this).css("background-color", "rgba(0, 0, 0, 0)");
       }
+
+      // get sequence size for Thumbnail exporter
+      var cs = new CSInterface;
+      // fill dimensions fields with this sequence's resolution
+      cs.evalScript('$.runScript.getSequenceResolution()', function(returnString){
+          try {
+              var dimensions = returnString.split(",");
+              if (dimensions.length == 2){
+                  if (dimensions[0] == "1080" && dimensions[1] == "1920"){
+                      $("#horizontalThumbPixels").val(540);
+                      $("#verticalThumbPixels").val(900);
+                  }
+                  else {
+                      $("#horizontalThumbPixels").val(dimensions[0]);
+                      $("#verticalThumbPixels").val(dimensions[1]);
+                  }
+              }
+              else { // wrong dimensions for sequence retrieved 
+                  $("#horizontalThumbPixels").val(0);
+                  $("#verticalThumbPixels").val(0);
+              }
+          }
+          catch (error) {
+              alert(error);
+          }
+      });
+
   });
 
 });

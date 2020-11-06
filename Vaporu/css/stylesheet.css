@@ -131,10 +131,6 @@ select {
   display: none;
 }
 
-#controls {
-  display: inline;
-}
-
 #addCommentsXMLHolder {
   background-color: #bdbdbd;
   border: 3px solid rgba(0, 0, 0, 0.8);
@@ -330,10 +326,6 @@ select {
   display: none;
 }
 
-#fullExporterControls { 
-  display: none;
-}
-
 #fullExportSequenceName {
   height: 3px !important;
   padding-bottom: 6px;
@@ -363,7 +355,7 @@ select {
   color: blue;
 }
 
-#segmentExporterControls {
+#exportControls {
   display: none;
 }
 
@@ -403,10 +395,6 @@ select {
 }
 
 #splitScreenApp {
-  display: none;
-}
-
-#thumbExportControls {
   display: none;
 }
 

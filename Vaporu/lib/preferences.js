@@ -43,14 +43,12 @@ $(document).ready(function() {
                     for (i = 0; i < configs.openApps.length; i++)
                         openApp(configs.openApps[i])
 
-                    //SEGMENT EXPORTER
-                    $('#exportPresetOptions').val(configs.segmentExporter.exportPreset);
+                    //EXPORTER
+                    $('#exportPresetOptions').val(configs.exportControls.exportPreset);
+                    $('#lockAR').prop('checked', configs.exportControls.lock);
 
                     //CAPTIONS REFORMAT
                     $('#addCaptionWarnings').prop('checked', configs.captionsReformat.addMarkers);
-
-                    //THUMBS EXPORT
-                    $('#lockAR').prop('checked', configs.thumbsExport.lock);
 
                     //FIT TO FRAME
                     $('#scaleCenterCheckbox').prop('checked', configs.fitToFrame.center);
@@ -101,9 +99,8 @@ $(document).ready(function() {
         var newJSON = {
             "areAppsHidden":false,
             "openApps":[],
-            "segmentExporter": {"exportPreset": "HQ"},
+            "exportControls": {"exportPreset": "HQ", "lock": false},
             "captionsReformat": {"addMarkers": false},
-            "thumbsExport": {"lock": false},
             "fitToFrame": {"center": true, "scaleTo": 100},
             "mogrtMaster": {"textToMogrtType": "TOS", "captionCharacters": 28},
             "scriptImporter": {"courtesies": false, "tos": false, "bold": false, "color": "#007EFF"},
@@ -125,14 +122,12 @@ $(document).ready(function() {
         });            
         newJSON.openApps = openAppsArray; 
 
-        //SEGMENT EXPORTER
-        newJSON.segmentExporter.exportPreset = $('#exportPresetOptions').val();
+        // EXPORTER
+        newJSON.exportControls.lock = $('#lockAR').is(":checked");
+        newJSON.exportControls.exportPreset = $('#exportPresetOptions').val();
 
         //CAPTIONS REFORMAT
         newJSON.captionsReformat.addMarkers = $('#addCaptionWarnings').is(":checked");
-
-        //THUMBS EXPORT
-        newJSON.thumbsExport.lock = $('#lockAR').is(":checked");
 
         //FIT TO FRAME
         newJSON.fitToFrame.center = $('#scaleCenterCheckbox').is(":checked");
@@ -168,7 +163,7 @@ $(document).ready(function() {
         newJSON.colorPalettes.size = $("#sizeSlider").val();
         newJSON.colorPalettes.labels = $('#showLabels').is(":checked");
 
-        //SEGMENT EXPORTER
+        //SPLITSCREEN
         newJSON.splitScreen.x = $('#splitScreenXSplits').val();
         newJSON.splitScreen.y = $('#splitScreenYSplits').val();
 

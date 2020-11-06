@@ -229,13 +229,14 @@ $(document).ready(function() {
         "Click to refresh the panel to its default state."
     )}, function(){hideHelp()}); 
 
-    $("#segmentExporterButton").hover(function () { showHelp(
-        "Export many videos from a Sequence at one time. Especially helpful for Snapchat or Facebook stories."
-    )}, function(){hideHelp()}); 
+
     $("#srtImporterButton").hover(function () { showHelp(
         "Hate working with captions? Try this."
     )}, function(){hideHelp()}); 
-    $("#thumbExportButton").hover(function () { showHelp(
+    $("#exporterButton").hover(function () { showHelp(
+        "Export your full video, review cuts, Snapchat tiles, and thumbnails."
+    )}, function(){hideHelp()}); 
+    $("#thumbExportControls").hover(function () { showHelp(
         "Save multiple thumbnails automatically. You don't even have to choose where to save them."
     )}, function(){hideHelp()}); 
     $("#projectSetupButton").hover(function () { showHelp(
@@ -253,8 +254,14 @@ $(document).ready(function() {
     $("#projectToolsButton").hover(function () { showHelp(
         "Miscellaneous tools to help you work from home and diagnose your project."
     )}, function(){hideHelp()}); 
+    $("#transcodeButton").hover(function () { showHelp(
+        "Convert your footage to a format that's easier for Premiere to work with."
+    )}, function(){hideHelp()}); 
 
     //SEGMENT EXPORTER
+    $("#segmentExporterControls").hover(function () { showHelp(
+        "Export many videos from a Sequence at one time. Especially helpful for Snapchat or Facebook stories."
+    )}, function(){hideHelp()}); 
     $("#exportRefreshButton").hover(function () { showHelp(
         'Resets the Audio Track to 2 and updates the amount of tiles. Use this when switching between Sequences in Premiere.'
     )}, function(){hideHelp()}); 
@@ -423,7 +430,7 @@ $(document).ready(function() {
         'Upload a Premiere CC XML file for this clip from the MAM. Ask Adrian if you need help getting the right file.'
     )}, function(){hideHelp()});
 
-    $("#fullExporterButton").hover(function () { showHelp(
+    $("#fullExporterControls").hover(function () { showHelp(
         "Export a review or final version of your video."
     )}, function(){hideHelp()});
     $("#exportHiResButton").hover(function () { showHelp(

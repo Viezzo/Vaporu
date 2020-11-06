@@ -102,14 +102,13 @@ $.runScript = {
 			var theNewFile = new File(pathToPreferences);
 			if (theNewFile) {
 				 var theJSON = {
-					"areAppsHidden": false,
+					"areAppsHidden":false,
 					"openApps":[],
-					"segmentExporter": {"exportPreset": "HQ"},
+					"exportControls": {"exportPreset": "HQ", "lock": false},
 					"captionsReformat": {"addMarkers": false},
-					"thumbsExport": {"lock": false},
 					"fitToFrame": {"center": true, "scaleTo": 100},
 					"mogrtMaster": {"textToMogrtType": "TOS", "captionCharacters": 28},
-            		"scriptImporter": {"courtesies": false, "tos": false, "bold": false, "color": "#007EFF"},
+					"scriptImporter": {"courtesies": false, "tos": false, "bold": false, "color": "#007EFF"},
 					"projectTools": {"displayHelp": true, "relinkWith":"1", "renameFrom": "1", "renameTo": "4", "addCommentsTo":"Clip"},
 					"colorPalettes": {"hiddenColorGroups":[], "size":75, "labels":true},
 					"splitScreen": {"x":1, "y":2},
@@ -1034,7 +1033,6 @@ $.runScript = {
 									}
 								}
 							}
-							
 							subSequencesToInsert.push(newSubSeq.projectItem);
 						}
 					}
@@ -3414,7 +3412,7 @@ $.runScript = {
 	},
 
 	findMOGRT: function (parentBin, nameToFind) {
-		var projectItem = null;
+		var projectItem = undefined;
 
         for (var i = 0; i < parentBin.children.numItems; i++) {
             var currentChild = parentBin.children[i];

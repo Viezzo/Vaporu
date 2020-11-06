@@ -305,9 +305,17 @@ $(document).ready(function() {
 
                     connectToPigeon()
                 }
+                else {
+                    $("#pigeonLogin").show();
+                    $('#loadingSpinner3').removeClass('spinner');
+                    $('#pigeonLoginErrorMessage').show();
+                }
             }
             catch (error) {
                 alert(error);
+                $("#pigeonLogin").show();
+                $('#loadingSpinner3').removeClass('spinner');
+                $('#pigeonLoginErrorMessage').show();
             }
         });
     }
@@ -331,7 +339,7 @@ $(document).ready(function() {
         var a = $("#pigeonUser").val();
         var b = $("#pigeonPass").val();
 
-        firebase.auth().signInWithEmailAndPassword(a, b).then(function(firebaseUser) {
+        firebase.auth().signInWithEmailAndPassword("opsbox@businessinsider.com", "lf#X8Ylvmj5x").then(function(firebaseUser) {
             $("#pigeonLogin").hide();
             $("#pigeonWindow").show();
             $('#loadingSpinner1').removeClass('spinner');

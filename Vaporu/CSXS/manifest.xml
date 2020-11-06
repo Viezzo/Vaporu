@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="6.0" ExtensionBundleId="com.AdrianTraviezo.Vaporu" ExtensionBundleVersion="1.0"
+<ExtensionManifest Version="6.0" ExtensionBundleId="Vaporu" ExtensionBundleVersion="1.0"
 ExtensionBundleName="Vaporu" 
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ExtensionList>
-		<Extension Id="com.AdrianTraviezo.Vaporu" Version="9.0.0" />
+		<Extension Id="Vaporu" Version="9.0.0" />
 	</ExtensionList>
 	<ExecutionEnvironment>
 		<HostList>
@@ -18,7 +18,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	</ExecutionEnvironment>
 
 	<DispatchInfoList>
-		<Extension Id="com.AdrianTraviezo.Vaporu">
+		<Extension Id="Vaporu">
 			<DispatchInfo >
 				<Resources>
 					<MainPath>./index.html</MainPath>
@@ -33,7 +33,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 				</Lifecycle>
 				<UI>
 					<Type>Panel</Type>
-					<Menu>Vaporu 3.2</Menu>
+					<Menu>Vaporu 4.0</Menu>
 					<Geometry>
 						<Size>
 							<Height>400</Height>
