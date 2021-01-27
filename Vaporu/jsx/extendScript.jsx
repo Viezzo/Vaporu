@@ -457,15 +457,13 @@ $.runScript = {
 					var projectMetadata = projectItem.getProjectMetadata();
 					var xmp	= new XMPMeta(projectMetadata);
 					var propertyExists = xmp.doesPropertyExist("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", label);
+					//alert("propertyExists: " + propertyExists);
 					// if the new property wasn't added before, add it.
 					if (!propertyExists){
 						var successfullyAdded = app.project.addPropertyToProjectMetadataSchema(name, label, type);
-						var xmp	= new XMPMeta(projectMetadata);
-						// check the schema again to see if it's now there
-						if (successfullyAdded){
-							var testLabel = $.runScript.setProjectMetadataValue(projectItem, name, " ");
-							propertyExists = testLabel == true ? true: false;
-						}
+						var newProjectMetadata = projectItem.getProjectMetadata();
+						var newXMP = new XMPMeta(newProjectMetadata);
+						propertyExists = newXMP.doesPropertyExist("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", label);
 					}
 					if (propertyExists)
 						customMetadataSuccess = true;
@@ -515,6 +513,8 @@ $.runScript = {
 		ridNameCreated = $.runScript.createCustomMetadata("RenameRid", "RenameRid", 2);
 		OGFileNameCreated = $.runScript.createCustomMetadata("RenameFileOriginal", "RenameFileOriginal", 2);
 		OGClipNameCreated = $.runScript.createCustomMetadata("RenameClipOriginal", "RenameClipOriginal", 2);
+
+		//alert(clipNameCCreated + "," + ridNameCreated + ',' + OGFileNameCreated + "," + OGClipNameCreated);
 
 		if (!clipNameCCreated || !ridNameCreated || !OGFileNameCreated || !OGClipNameCreated){ // if creating the metadata failed, immediately stop this function. Won't happen if it was already created
 			alert("Could not initialize renaming function.")
@@ -1909,6 +1909,10 @@ $.runScript = {
 							captionProjectItem = $.runScript.insertCaption2020(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption, captionProjectItem);
 							if (typeof captionProjectItem == 'undefined') // stop if we don't have a caption item
 								confirmContinue = false;
+							if (captionProjectItem == 0){
+								confirmContinue = false;
+								break;
+							}
 						}
 						else
 							confirmContinue = $.runScript.insertCaption(startTimecodesArray[i], endTimecodesArray[i], textArray[i], trackNumber - 1, isFirstCaption);
@@ -1925,7 +1929,8 @@ $.runScript = {
 						}
 					}
 				}
-				alert("All captions imported!")
+				if (confirmContinue == true)
+					alert("All captions imported!")
 			}
 			catch (err) {
 				alert('Error adding captions: ' + err)
@@ -1970,6 +1975,7 @@ $.runScript = {
 			return 0;
 		}
 		var theText = "";
+		var errorText = "";
 		// go through each media to replace, then replace it.
 		for (var i = 0; i < selection.length; i ++) {
 			if (selection[i].isMGT()){
@@ -1977,20 +1983,23 @@ $.runScript = {
 				if (components){
 					var textComponent = components.properties.getParamForDisplayName("Text");
 					if (textComponent){
-						var captionText = textComponent.getValue();
-						// if properties have been edited, Premiere will set the text value to include
-						// all the properties. Parse that, find the textEditValue, and set text to that instead
-						var testForFontEditInfoArray = captionText.split('},"textEditValue":"');
-						if (testForFontEditInfoArray.length > 1){
-							var textEditValueArray = testForFontEditInfoArray[testForFontEditInfoArray.length - 1].split('"}');
-							if (textEditValueArray.length > 1 && typeof textEditValueArray[0] != "undefined" )
-								captionText = textEditValueArray[0];
-						}
-						var maxLineLength = 28;
-						var formattedCaptionText = $.runScript.AECaptionParse(captionText, maxLineLength);
+						
 						var formattedStartTimecode = $.runScript.secondsToTimecode(selection[i].start.seconds);
 						var formattedEndTimecode = $.runScript.secondsToTimecode(selection[i].end.seconds);
 
+						var captionText = textComponent.getValue();
+						if ($.runScript.stringStartsWith(captionText, '{"') && $.runScript.stringEndsWith(captionText, '"}')){
+							try {
+								var captionJSON = JSON.parse(captionText);
+								if (captionJSON.textEditValue)
+									captionText = captionJSON.textEditValue;
+							}
+							catch (err){
+								errorText += "Couldn't parse caption at " + formattedStartTimecode + '\n';
+							}
+						}
+						var maxLineLength = 28;
+						var formattedCaptionText = $.runScript.AECaptionParse(captionText, maxLineLength);
 						theText += (i + 1)
 							+ "\r\n"
 							+ formattedStartTimecode
@@ -2016,6 +2025,8 @@ $.runScript = {
 			seqName = "";
 		}
 		$.runScript.saveSRT("captionsFromVaporu_" + seqName, theText);
+		if (errorText.length > 0)
+			alert(errorText); // if there were JSONs that failed to parse
 	},
 
 	secondsToTimecode: function (timeInSeconds) {
@@ -3329,6 +3340,7 @@ $.runScript = {
 		app.enableQE();
 		var mainSequence = app.project.activeSequence;
 
+		var confirmDelete = false;
 		// if NULLTEXT, don't add it 
 		if (captionText && typeof captionText != "undefined"){
 			if (typeof captionProjectItem == 'undefined') // find the project Item for the caption, if it hasn't been passed in
@@ -3339,14 +3351,13 @@ $.runScript = {
 				if (isFirstCaption){
 					//alert("first caption and" + vidTrackItem.clips.numItems) 
 					if (vidTrackItem.clips.numItems != 0){
-						confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?");
+						confirmDelete = confirm("This will delete all clips on track " + (vidTrack + 1) + ". Continue?", false, "Are you sure?");
 						if (confirmDelete){
-							while (vidTrackItem.clips.numItems > 0){
+							while (vidTrackItem.clips.numItems > 0)
 								vidTrackItem.clips[vidTrackItem.clips.numItems - 1].remove(false,true);
-							}
 						}
 						else // user decided to not proceed with insertion
-							return 0
+							return 0;
 					}
 					else
 						confirmDelete = true;
@@ -3366,7 +3377,17 @@ $.runScript = {
 					if (newMOGRT && newMOGRT != "undefined"){
 						//newMOGRT.setSelected(1,1);
 						var maxLineLength = 28;
-						var modifiedText = captionText.replace(/<i>/g, '').replace(/<\/i>/g, '').replace(/--/g, '—');
+						var modifiedText = captionText.replace(/<i>/g, '').replace(/<\/i>/g, '');
+						if (modifiedText.indexOf('--') > 0){
+							modifiedText = modifiedText.replace(/--/g, '—');
+							modifiedText = modifiedText.replace(/—-/g, '---');
+							modifiedText = modifiedText.replace(/——/g, '----');
+							modifiedText = modifiedText.replace('a—', 'a--');
+							modifiedText = modifiedText.replace(/—-/g, '---');
+						}
+
+						// var multiEmdashRegex = /—{2,}/
+						// modifiedText = modifiedText.replace('----', '----');
 
 						var formattedCaptionText = $.runScript.AECaptionParse(modifiedText, maxLineLength);
 						var components = newMOGRT.getMGTComponent();
