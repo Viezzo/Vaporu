@@ -1636,31 +1636,38 @@ $.runScript = {
 		convertToMOGRT: function (selectedTrack, mogrtType) {
 		var mainSeq = app.project.activeSequence;
 
-		var version = "14.01";
-		var versionArray = app.version.split(".");
-		if (versionArray.length > 1)
-			version = versionArray[0] + "." + versionArray[1];
+		// var version = "14.01";
+		// var versionArray = app.version.split(".");
+		// if (versionArray.length > 1)
+		// 	version = versionArray[0] + "." + versionArray[1];
 
-		if (parseFloat(version) > 14.0) { // Premiere 2020
-			alert('This feature is unsupported in your version of Premiere.')
-			return 0;
-		}
+		// if (parseFloat(version) > 14.0) { // Premiere 2020
+		// 	alert('This feature is unsupported in your version of Premiere.')
+		// 	return 0;
+		// }
 		
 		if (!selectedTrack || selectedTrack > mainSeq.videoTracks.numTracks){
 			selectedTrack = mainSeq.videoTracks.numTracks;
 		}
+
+		
 		 
 		var selection = mainSeq.getSelection();
+		var isFirstCaption = true;
+
 		for (var i = 0; i < selection.length; i++) {
-			// find the text inside of the selected clip (selection[i])
 			for (var j = 0; j < selection[i].components.numItems; j++) {
 				var originalText = selection[i];
-
 				if (originalText.components[j].displayName == "Text"){
 
 					var sourceText = originalText.components[j].properties[0];
 					if (sourceText){
 						var copiedText = sourceText.getValue();
+						if (copiedText.length == 1) {
+							alert('This feature requires New World Scripting to be turned OFF. Refer to the Vaporu documentation or ask @atraviezo for help.')
+							return 0;
+						}
+
 						var amountOfmTextProperties = copiedText.split("mText\":\"").length;
 						// parse the value of the source text by removing the beginning and end
 						if (amountOfmTextProperties > 1){
@@ -1697,8 +1704,15 @@ $.runScript = {
 									components.properties.getParamForDisplayName("Max Line Length").setValue(longestLineLength, 1);
 								}
 							}
-							else 
+							if (mogrtType == "Courtesy")
 								$.runScript.insertCourtesy(newClipStartTime, newClipEndTime, copiedText, selectedTrack - 1);
+							if (mogrtType == "Caption") {
+								continueInsert = $.runScript.insertCaption(newClipStartTime, newClipEndTime, copiedText, selectedTrack - 1, isFirstCaption);
+								if (continueInsert == 0){
+									return;
+								}
+								isFirstCaption = false;
+							}
 						}
 					}
 					
@@ -3258,26 +3272,26 @@ $.runScript = {
 			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption"){
+					if (MOGRTBin.children[i].name == "Caption_2020"){
 						captionProjectItem = MOGRTBin.children[i];
 						break;
 					}
 				}
 				// mogrt bin exists but the Captions .aegraphic doesn't
 				if (!captionProjectItem || typeof captionProjectItem == "undefined"){
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption", parseFloat(insertTime), vidTrack, 1);
+					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
 				}
 			}
 			// choose the mogrt bin. if it doesn't exist, create it
 			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption", parseFloat(insertTime), vidTrack, 1);
+				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
 				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 			}
 			// if after adding the MOGRT, we now have the mogrt bin
 			if (typeof MOGRTBin != "undefined"){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption"){
+					if (MOGRTBin.children[i].name == "Caption_2020"){
 						captionProjectItem = MOGRTBin.children[i];
 						break;
 					}
@@ -3287,7 +3301,7 @@ $.runScript = {
 				// captionProjectItem exists. delete the original newMOGRT if it was created, then proceed
 				if (captionProjectItem && typeof captionProjectItem != "undefined"){
 					captionProjectItem.setInPoint(0);
-					captionProjectItem.setOutPoint(parseFloat(endTime) - parseFloat(insertTime));
+					captionProjectItem.setOutPoint(parseFloat(endTime.seconds) - parseFloat(insertTime.seconds));
 					var vidTrackItem = mainSequence.videoTracks[vidTrack];
 					//delete everything on the top track, then insert captions
 					if (isFirstCaption){
@@ -3310,13 +3324,14 @@ $.runScript = {
 						
 					if (confirmDelete == true) {
 						var originalNumberOfClips = vidTrackItem.clips.numItems;
-						vidTrackItem.insertClip(captionProjectItem, parseFloat(insertTime));
+						vidTrackItem.insertClip(captionProjectItem, parseFloat(insertTime.seconds));
 						newMOGRT = vidTrackItem.clips[originalNumberOfClips];
 
 						if (newMOGRT && newMOGRT != "undefined"){
 							newMOGRT.setSelected(1,1);
 							var components = newMOGRT.getMGTComponent();
-							components.properties.getParamForDisplayName("Text").setValue(captionText, 1);
+							var modifiedText = captionText.replace(/\\r/g, '\r\n');
+							components.properties.getParamForDisplayName("Text").setValue(modifiedText, 1);
 							//set to square version if that's the sequence
 							var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
 							var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");

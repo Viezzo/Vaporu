@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="6.0" ExtensionBundleId="Vaporu" ExtensionBundleVersion="4.01"
+<ExtensionManifest Version="6.0" ExtensionBundleId="Vaporu" ExtensionBundleVersion="4.02"
 ExtensionBundleName="Vaporu" 
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ExtensionList>
@@ -33,7 +33,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 				</Lifecycle>
 				<UI>
 					<Type>Panel</Type>
-					<Menu>Vaporu 4.01</Menu>
+					<Menu>Vaporu 4.02</Menu>
 					<Geometry>
 						<Size>
 							<Height>400</Height>
