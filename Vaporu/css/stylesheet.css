@@ -142,7 +142,7 @@ li {
   width: 50vw;
 }
 
-#csvHolder{
+#csvHolder, #creditsHolder{
   background-color: #bdbdbd;
   border: 3px solid rgba(0, 0, 0, 0.8);
   border-radius: 10px;
@@ -192,7 +192,7 @@ li {
   width: 50vw;
 }
 
-#csvContents, #renameCsvContents, #addCommentsXMLContents {
+#csvContents, #renameCsvContents, #addCommentsXMLContents, #creditsContents{
   display: none;
 }
 
@@ -200,7 +200,7 @@ li {
   display: none;
 }
 
-#csvFileList, #renameCsvFileList, #addCommentsXMLFileList {
+#csvFileList, #renameCsvFileList, #addCommentsXMLFileList, #creditsFileList{
   display: none;
 }
 
@@ -208,7 +208,7 @@ li {
   display: none;
 }
 
-#csvFileUploaderReset, #renameCsvFileUploaderReset, #addCommentsXMLFileUploaderReset {
+#csvFileUploaderReset, #renameCsvFileUploaderReset, #addCommentsXMLFileUploaderReset, #creditsFileUploaderReset {
   padding: 7px;
   display: none;
 }
@@ -417,6 +417,11 @@ li {
 }
 
 #updateNotification {
+  display: none;
+  cursor: pointer;
+}
+
+#updateLink {
   display: none;
 }
 

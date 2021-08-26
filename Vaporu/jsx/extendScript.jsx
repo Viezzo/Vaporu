@@ -10,6 +10,15 @@ buildSequenceObject = {
 	latestEnd : 0
 }
 
+mogrtNames = {
+	tos : "Life_TOS",
+	courtesy : "Life_Courtesy",
+	number : "Life_Compilation Numbers",
+	caption : "Vaporu_Captions",
+	splitscreen : "Vaporu_SplitScreen",
+	credits : "Life_Credits"
+}
+
 $.runScript = {
 
 	updateEventPanel : function (message) {
@@ -446,31 +455,59 @@ $.runScript = {
 	},
 
 	createCustomMetadata: function (name, label, type) {
+		var kPProPrivateProjectMetadataURI	= "http://ns.adobe.com/premierePrivateProjectMetaData/1.0/";
 		var customMetadataSuccess = false;
 		if (app.isDocumentOpen()) {
 			var projectItem = app.project.rootItem.children[0];
 			if (projectItem) {
-				if (ExternalObject.AdobeXMPScript === undefined) {
+				if (ExternalObject.AdobeXMPScript === undefined) 
 					ExternalObject.AdobeXMPScript = new ExternalObject('lib:AdobeXMPScript');
-				}
 				if (ExternalObject.AdobeXMPScript !== undefined) { // safety-conscious!
 					var projectMetadata = projectItem.getProjectMetadata();
 					var xmp	= new XMPMeta(projectMetadata);
-					var propertyExists = xmp.doesPropertyExist("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", label);
-					//alert("propertyExists: " + propertyExists);
+					var propertyExists = xmp.doesPropertyExist(kPProPrivateProjectMetadataURI, label);
 					// if the new property wasn't added before, add it.
 					if (!propertyExists){
 						var successfullyAdded = app.project.addPropertyToProjectMetadataSchema(name, label, type);
 						var newProjectMetadata = projectItem.getProjectMetadata();
 						var newXMP = new XMPMeta(newProjectMetadata);
-						propertyExists = newXMP.doesPropertyExist("http://ns.adobe.com/premierePrivateProjectMetaData/1.0/", label);
+						propertyExists = newXMP.doesPropertyExist(kPProPrivateProjectMetadataURI, label);
 					}
-					if (propertyExists)
+					if (propertyExists || successfullyAdded)
 						customMetadataSuccess = true;
 				}
 			}
 		}
 		return customMetadataSuccess;
+	},
+
+	createCustomMetadataText : function (name, label, type) {
+		var kPProPrivateProjectMetadataURI	= "http://ns.adobe.com/premierePrivateProjectMetaData/1.0/";
+		if (app.isDocumentOpen()) {
+			var projectItem = app.project.rootItem.children[0]; // just grabs first projectItem.
+			if (projectItem) {
+				if (ExternalObject.AdobeXMPScript === undefined) 
+					ExternalObject.AdobeXMPScript = new ExternalObject('lib:AdobeXMPScript');
+				if (ExternalObject.AdobeXMPScript !== undefined) { // safety-conscious!
+					var projectMetadata 			= projectItem.getProjectMetadata();
+					var successfullyAdded 			= app.project.addPropertyToProjectMetadataSchema(label, label, 2);
+					var xmp							= new XMPMeta(projectMetadata);
+					xmp.setProperty(kPProPrivateProjectMetadataURI, label, "?");
+
+					var array = [];
+					array[0] = label;
+					
+					var str = xmp.serialize();
+					projectItem.setProjectMetadata(str, array);
+
+					var newblob = projectItem.getProjectMetadata();
+					var newXMP = new XMPMeta(newblob);
+					var customMetadataSuccess = newXMP.doesPropertyExist(kPProPrivateProjectMetadataURI, label);
+
+					return customMetadataSuccess;
+				}
+			}
+		}
 	},
 
 	getProjectMetadataValue: function (obj, metadataLabel){
@@ -509,10 +546,10 @@ $.runScript = {
 
 	renameSelectedFiles: function(renameClipsOnly, renameBy, csvInput){
 		// first, create custom metadata field to attach rename info to
-		clipNameCCreated = $.runScript.createCustomMetadata("RenameClip", "RenameClip", 2);
-		ridNameCreated = $.runScript.createCustomMetadata("RenameRid", "RenameRid", 2);
-		OGFileNameCreated = $.runScript.createCustomMetadata("RenameFileOriginal", "RenameFileOriginal", 2);
-		OGClipNameCreated = $.runScript.createCustomMetadata("RenameClipOriginal", "RenameClipOriginal", 2);
+		clipNameCCreated = $.runScript.createCustomMetadataText("RenameClip", "RenameClip", 2);
+		ridNameCreated = $.runScript.createCustomMetadataText("RenameRid", "RenameRid", 2);
+		OGFileNameCreated = $.runScript.createCustomMetadataText("RenameFileOriginal", "RenameFileOriginal", 2);
+		OGClipNameCreated = $.runScript.createCustomMetadataText("RenameClipOriginal", "RenameClipOriginal", 2);
 
 		//alert(clipNameCCreated + "," + ridNameCreated + ',' + OGFileNameCreated + "," + OGClipNameCreated);
 
@@ -1464,25 +1501,25 @@ $.runScript = {
 		if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
 			// go through the mogrt bin and find the Caption 
 			for (i = 0; i < MOGRTBin.children.numItems; i++) {
-				if (MOGRTBin.children[i].name == "SplitScreen"){
+				if (MOGRTBin.children[i].name == mogrtNames.splitscreen){
 					mogrtProjectItem = MOGRTBin.children[i];
 					break;
 				}
 			}
 			// mogrt bin exists but the Captions .aegraphic doesn't
 			if (!mogrtProjectItem || typeof mogrtProjectItem == "undefined")
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "SplitScreen", parseFloat(insertTime), vidTrack + 1, 1);
+				newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.splitscreen, parseFloat(insertTime), vidTrack + 1, 1);
 		}
 		// choose the mogrt bin. if it doesn't exist, create it
 		if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-			newMOGRT = mainSequence.importMGTFromLibrary("Insider", "SplitScreen", parseFloat(insertTime), vidTrack + 1, 1);
+			newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.splitscreen, parseFloat(insertTime), vidTrack + 1, 1);
 			MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 		}
 		// if after adding the MOGRT, we now have the mogrt bin
 		if (typeof MOGRTBin != "undefined"){
 			// go through the mogrt bin and find the Caption 
 			for (i = 0; i < MOGRTBin.children.numItems; i++) {
-				if (MOGRTBin.children[i].name == "SplitScreen"){
+				if (MOGRTBin.children[i].name == mogrtNames.splitscreen){
 					mogrtProjectItem = MOGRTBin.children[i];
 					break;
 				}
@@ -2418,6 +2455,7 @@ $.runScript = {
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------------
 
+
 	insertVisualFromXLSX: function(visualOriginal, startTime, endTime, theText, courtesy, boldWords, compilationNumber, mode2, mode3, mode4, boldColor) {
 		app.enableQE();
 		//alert(visualOriginal + ", " + startTime+ ", " + endTime)
@@ -2894,26 +2932,26 @@ $.runScript = {
 		if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
 			// go through the mogrt bin and find the Caption 
 			for (i = 0; i < MOGRTBin.children.numItems; i++) {
-				if (MOGRTBin.children[i].name == "Compilation Number"){
+				if (MOGRTBin.children[i].name == mogrtNames.number){
 					mogrtProjectItem = MOGRTBin.children[i];
 					break;
 				}
 			}
 			// mogrt bin exists but the Captions .aegraphic doesn't
 			if (!mogrtProjectItem || typeof mogrtProjectItem == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Compilation Number", parseFloat(insertTime), vidTrack, 1);
+				newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.number, parseFloat(insertTime), vidTrack, 1);
 			}
 		}
 		// choose the mogrt bin. if it doesn't exist, create it
 		if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-			newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Compilation Number", parseFloat(insertTime), vidTrack, 1);
+			newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.number, parseFloat(insertTime), vidTrack, 1);
 			MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 		}
 		// if after adding the MOGRT, we now have the mogrt bin
 		if (typeof MOGRTBin != "undefined"){
 			// go through the mogrt bin and find the Caption 
 			for (i = 0; i < MOGRTBin.children.numItems; i++) {
-				if (MOGRTBin.children[i].name == "Compilation Number"){
+				if (MOGRTBin.children[i].name == mogrtNames.number){
 					mogrtProjectItem = MOGRTBin.children[i];
 					break;
 				}
@@ -2933,7 +2971,6 @@ $.runScript = {
 				newMOGRT = vidTrackItem.clips[originalNumberOfClips];
 
 				if (newMOGRT && newMOGRT != "undefined"){
-					//newMOGRT.setSelected(1,1);
 					var components = newMOGRT.getMGTComponent();
 					components.properties.getParamForDisplayName("Number").setValue(parseInt(number), 1);
 					var rgbString = color.replace("rgb(", "").replace(")", "");
@@ -2968,7 +3005,7 @@ $.runScript = {
 			if (insertTime != 0){
 				formattedInsertionTime = insertTime.seconds
 			}
-			var newMOGRT = mainSequence.importMGTFromLibrary("Insider", "TOS", formattedInsertionTime, vidTrack, 1);
+			var newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.tos, formattedInsertionTime, vidTrack, 1);
 			if (newMOGRT){// cut at end time of the clip below
 				newMOGRT.end = endTime;
 				newMOGRT.setSelected(true);
@@ -3008,26 +3045,26 @@ $.runScript = {
 			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "TOS_2020"){
+					if (MOGRTBin.children[i].name == mogrtNames.tos){
 						TOSProjectItem = MOGRTBin.children[i];
 						break;
 					}
 				}
 				// mogrt bin exists but the Captions .aegraphic doesn't
 				if (!TOSProjectItem || typeof TOSProjectItem == "undefined"){
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "TOS_2020", parseFloat(insertTime), vidTrack, 1);
+					newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.tos, parseFloat(insertTime), vidTrack, 1);
 				}
 			}
 			// choose the mogrt bin. if it doesn't exist, create it
 			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "TOS_2020", parseFloat(insertTime), vidTrack, 1);
+				newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.tos, parseFloat(insertTime), vidTrack, 1);
 				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 			}
 			// if after adding the MOGRT, we now have the mogrt bin
 			if (typeof MOGRTBin != "undefined"){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "TOS_2020"){
+					if (MOGRTBin.children[i].name == mogrtNames.tos){
 						TOSProjectItem = MOGRTBin.children[i];
 						break;
 					}
@@ -3088,7 +3125,7 @@ $.runScript = {
 			if (insertTime != 0){
 				formattedInsertionTime = insertTime.seconds
 			}
-			var newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Courtesy", formattedInsertionTime, vidTrack, 1);
+			var newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.courtesy, formattedInsertionTime, vidTrack, 1);
 			if (newMOGRT){
 				// cut at end time of the clip below
 				newMOGRT.end = endTime;
@@ -3163,26 +3200,26 @@ $.runScript = {
 			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Courtesy"){
+					if (MOGRTBin.children[i].name == mogrtNames.courtesy){
 						TOSProjectItem = MOGRTBin.children[i];
 						break;
 					}
 				}
 				// mogrt bin exists but the Captions .aegraphic doesn't
 				if (!TOSProjectItem || typeof TOSProjectItem == "undefined"){
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Courtesy", parseFloat(insertTime), vidTrack, 1);
+					newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.courtesy, parseFloat(insertTime), vidTrack, 1);
 				}
 			}
 			// choose the mogrt bin. if it doesn't exist, create it
 			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Courtesy", parseFloat(insertTime), vidTrack, 1);
+				newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.courtesy, parseFloat(insertTime), vidTrack, 1);
 				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 			}
 			// if after adding the MOGRT, we now have the mogrt bin
 			if (typeof MOGRTBin != "undefined"){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Courtesy"){
+					if (MOGRTBin.children[i].name == mogrtNames.courtesy){
 						TOSProjectItem = MOGRTBin.children[i];
 						break;
 					}
@@ -3272,26 +3309,26 @@ $.runScript = {
 			if (MOGRTBin && typeof MOGRTBin != "undefined" && MOGRTBin.type == 2){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption_2020"){
+					if (MOGRTBin.children[i].name == mogrtNames.caption){
 						captionProjectItem = MOGRTBin.children[i];
 						break;
 					}
 				}
 				// mogrt bin exists but the Captions .aegraphic doesn't
 				if (!captionProjectItem || typeof captionProjectItem == "undefined"){
-					newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
+					newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.caption, parseFloat(insertTime), vidTrack, 1);
 				}
 			}
 			// choose the mogrt bin. if it doesn't exist, create it
 			if (!MOGRTBin || typeof MOGRTBin == "undefined"){
-				newMOGRT = mainSequence.importMGTFromLibrary("Insider", "Caption_2020", parseFloat(insertTime), vidTrack, 1);
+				newMOGRT = mainSequence.importMGTFromLibrary("Insider", mogrtNames.caption, parseFloat(insertTime), vidTrack, 1);
 				MOGRTBin = $.runScript.searchForBinWithName("Motion Graphics Template Media");
 			}
 			// if after adding the MOGRT, we now have the mogrt bin
 			if (typeof MOGRTBin != "undefined"){
 				// go through the mogrt bin and find the Caption 
 				for (i = 0; i < MOGRTBin.children.numItems; i++) {
-					if (MOGRTBin.children[i].name == "Caption_2020"){
+					if (MOGRTBin.children[i].name == mogrtNames.caption){
 						captionProjectItem = MOGRTBin.children[i];
 						break;
 					}
@@ -3359,7 +3396,7 @@ $.runScript = {
 		// if NULLTEXT, don't add it 
 		if (captionText && typeof captionText != "undefined"){
 			if (typeof captionProjectItem == 'undefined') // find the project Item for the caption, if it hasn't been passed in
-				captionProjectItem = $.runScript.getOrCreateMOGRT(app.project.rootItem, "Caption_2020", vidTrack);
+				captionProjectItem = $.runScript.getOrCreateMOGRT(app.project.rootItem, mogrtNames.caption, vidTrack);
 			if (typeof captionProjectItem != "undefined"){
 				var vidTrackItem = mainSequence.videoTracks[vidTrack];
 				//delete everything on the top track, then insert captions
@@ -3431,6 +3468,53 @@ $.runScript = {
 		}
 		return captionProjectItem;
 	},
+
+	insertCreditsFromXLSX: function (headers, values) {
+		app.enableQE();
+		var currentTime = qe.project.getActiveSequence().CTI;
+		if (typeof headers == "object" && typeof values == "object")
+			$.runScript.insertCredits(currentTime.ticks, headers, values, 4);
+		else
+			alert('Failed to convert sheet data to arrays.')
+	},
+
+	insertCredits: function (insertTime, headerArray, valueArray, vidTrack) {
+		app.enableQE();
+		var mainSequence = app.project.activeSequence;		
+
+		if (headerArray && typeof headerArray != "undefined"){
+			mogrtProjectItem = $.runScript.getOrCreateMOGRT(app.project.rootItem, mogrtNames.credits, vidTrack);
+			if (typeof mogrtProjectItem != "undefined"){
+				var vidTrackItem = mainSequence.videoTracks[vidTrack];
+				var originalNumberOfClips = vidTrackItem.clips.numItems;
+				vidTrackItem.overwriteClip(mogrtProjectItem, insertTime);
+				newMOGRT = vidTrackItem.clips[originalNumberOfClips];
+
+				if ( parseInt(newMOGRT.start.ticks) > parseInt(insertTime) ) {
+					alert("Inserted credits MOGRT, but couldn't modify it. Ensure your playhead is after the last clip on layer 5, then try again.")
+					return 0;
+				}
+				newMOGRT.setSelected(1,1);
+
+				if (newMOGRT != "undefined"){
+					var components = newMOGRT.getMGTComponent();
+					for (j = 0; j < headerArray.length; j++) // fill out each 
+						components.properties.getParamForDisplayName(headerArray[j]).setValue(valueArray[j], 1);
+					
+					var seqAR = mainSequence.frameSizeHorizontal/mainSequence.frameSizeVertical;
+					var mogrtAR = components.properties.getParamForDisplayName("Wide/Square/Vertical");
+					if (seqAR == 1)
+						mogrtAR.setValue(2);
+					else if (seqAR == 9/16) 
+						mogrtAR.setValue(3);
+				}
+			}
+			else
+				alert('Could not locate the Credits MOGRT. Please contact @atraviezo.')
+		}
+		return mogrtProjectItem;
+	},
+
 
 	getOrCreateMOGRT : function (parentBin, nameToFind, vidTrack) {
 		var mainSequence = app.project.activeSequence;
@@ -3753,7 +3837,7 @@ $.runScript = {
 			return 0;
 		}
 		// create original path metadata field in this project
-		var OGpathCreated = $.runScript.createCustomMetadata("TranscodeOriginalPath", "TranscodeOriginalPath", 2);
+		var OGpathCreated = $.runScript.createCustomMetadataText("TranscodeOriginalPath", "TranscodeOriginalPath", 2);
 		if (!OGpathCreated){ // if creating the metadata failed, immediately stop this function. Won't happen if it was already created
 			alert("Could not initialize replace function.")
 			return 0;

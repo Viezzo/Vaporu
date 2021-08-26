@@ -109,9 +109,9 @@
 		<hr size="0.5" color="black">
 
 		<div id="updateWarning"></div>
+		<textarea id="updateLink">https://docs.google.com/presentation/d/1dr7FOSrhx8Wp9wq1KQsevPXyvXQX63cPoNUyEMVLbXA/edit#slide=id.ga8df44bd01_0_0</textarea>
 
 		<div id="appButtons" class="row">
-
 			<div class="column">
 				<img class="appButton" id="scriptImporterButton" data-appName="scriptImporterControls" src="./images/script_importer.png">
 				<img class="appButton" id="srtImporterButton" data-appName="srtImporterControls" src="./images/captions_converter.png">
@@ -336,59 +336,77 @@
 
 
 		<div class="app" id="scriptImporterControls">
-			<div id="csvHolder">
-				<div id="csvDragBoxText">
-					Drag your XLSX file into this gray box, or click
-					<input id="csvUploadInput" type="file"/>
-					<a href="" id="csvUploadLink">here</a>
-					to find it.
+			<div>
+				<div id="csvHolder">
+					<div id="csvDragBoxText">
+						Drag your script XLSX file into this gray box, or click
+						<input id="csvUploadInput" type="file"/>
+						<a href="" id="csvUploadLink">here</a>
+						to find it.
+					</div>
+					<i><td><ul id="csvFileList"></ul></td></i>
+					<a href="#"><i class="fas fa-times" id="csvFileUploaderReset"></i></a>
+					<div id=scriptPreviewButtonHolder>
+						<input id="scriptPreviewButton" type="submit" value="Preview">
+					</div>
 				</div>
-				<i><td><ul id="csvFileList"></ul></td></i>
-				<a href="#"><i class="fas fa-times" id="csvFileUploaderReset"></i></a>
-				<div id=scriptPreviewButtonHolder>
-					<input id="scriptPreviewButton" type="submit" value="Preview">
-				</div>
-			</div>
-			<div id="csvContents"></div>
-			<div class='noMargin'>
+				<div id="csvContents"></div>
+				
 				<div class='noMargin'>
-					<span id="courtesiesBox" class="interfaceComponent">
-						<div class="interfaceComponent">Courtesies</div>
-						<div class="interfaceComponent"><input id="mode2" type="checkbox" name="Courtesies" value="Courtesies" checked="checked"></div>
-					</span>
-					<span id="TOSBox" class="interfaceComponent">
-						<div class="interfaceComponent">TOS</div>
-						<div class="interfaceComponent"><input id="mode3" type="checkbox" name="TOS" value="TOS" checked="checked"></div>
-					</span>
-					<span id="boldColorBox" class="interfaceComponent">
-						<div class="interfaceComponent">Bold</div>
-						<div class="interfaceComponent"><input id="mode4" type="checkbox" name="Bold" value="Bold" checked="checked"></div>
-					</span>
-					<span id="boldColorSquareContainer" class='interfaceComponent'>
-						<div id="boldColorSquare"></div>
+					<div class='noMargin'>
+						<span id="courtesiesBox" class="interfaceComponent">
+							<div class="interfaceComponent">Courtesies</div>
+							<div class="interfaceComponent"><input id="mode2" type="checkbox" name="Courtesies" value="Courtesies" checked="checked"></div>
+						</span>
+						<span id="TOSBox" class="interfaceComponent">
+							<div class="interfaceComponent">TOS</div>
+							<div class="interfaceComponent"><input id="mode3" type="checkbox" name="TOS" value="TOS" checked="checked"></div>
+						</span>
+						<span id="boldColorBox" class="interfaceComponent">
+							<div class="interfaceComponent">Bold</div>
+							<div class="interfaceComponent"><input id="mode4" type="checkbox" name="Bold" value="Bold" checked="checked"></div>
+						</span>
+						<span id="boldColorSquareContainer" class='interfaceComponent'>
+							<div id="boldColorSquare"></div>
+						</span>
+					</div>
+					<div id='boldColorPicker'>
+						<span>Hex code: </span>
+						<input id="boldHexValue" type="text" maxlength="7" value="#007EFF">
+					</div>
+					<span class="interfaceComponent">
+						<div><input id="csvParser" type="submit" value="Insert Script"></div>
 					</span>
 				</div>
-				<div id='boldColorPicker'>
-					<span>Hex code: </span>
-					<input id="boldHexValue" type="text" maxlength="7" value="#007EFF">
+				<div class='noMargin'>
+					<table id="scriptPreviewBox">
+						<tr id="previewTableHeader">
+							<th>File</th>
+							<th>In</th>
+							<th>Out</th>
+							<th>TOS</th>
+							<th>Courtesy</th>
+							<th>Bold</th>
+							<th>#</th>
+						</tr>
+					</table>
 				</div>
-				<span class="interfaceComponent">
-					<div><input id="csvParser" type="submit" value="Insert"></div>
-				</span>
 			</div>
-			<div class='noMargin'>
-				<table id="scriptPreviewBox">
-					<tr id="previewTableHeader">
-						<th>File</th>
-						<th>In</th>
-						<th>Out</th>
-						<th>TOS</th>
-						<th>Courtesy</th>
-						<th>Bold</th>
-						<th>#</th>
-					</tr>
-				</table>
+
+			<hr class="hrMini" size="0.5" color="#121212">
+
+			<div>
+				<div id="creditsHolder">
+					<div id="creditsDragBoxText">
+						Drag your CREDITS into this box.
+					</div>
+					<i><td><ul id="creditsFileList"></ul></td></i>
+					<a href="#"><i class="fas fa-times" id="creditsFileUploaderReset"></i></a>
+				</div>
+				<div id="creditsContents"></div>
+				<div><input id="creditsParser" type="submit" value="Insert Credits"></div>
 			</div>
+
 			<hr class="hrPadding" size="0.5" color="black">
 		</div>
 		
@@ -628,5 +646,5 @@
 		</div>
 		
 	</body>
-	<div id="panelVersion">4.02</div>
+	<div id="panelVersion">4.03</div>
 </html>

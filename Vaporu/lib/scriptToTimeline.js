@@ -13,7 +13,8 @@ $(document).ready(function() {
     }
 
     window.xlSheetData = {
-        xlsheet : false
+        xlsheet : false,
+        creditsSheet : false
     };
 
     $("#scriptImporterButton").click(function(){
@@ -68,9 +69,24 @@ $(document).ready(function() {
         $('#scriptPreviewBox').css("display", "none");
     });
 
+    // reset button and its tooltip
+    $("#creditsFileUploaderReset").click(function(){
+        window.xlSheetData.xlsheet = false;
+        $("#creditsContents").text("");
+        $("#creditsFileList").css("display", "none");
+        $("#creditsFileList").text("");
+        $(this).css("display", "none");
+        $("#creditsDragBoxText").css("display", "block");
+    });
+
     $('[data-toggle="resetFilesTooltip"]').tooltip();
 
     $("#csvFileUploaderReset").hover(function () {
+        $(this).animate({color: "#ff1500"}, 150);
+    }, function(){
+        $(this).animate({color: "#424242"});
+    });
+    $("#creditsFileUploaderReset").hover(function () {
         $(this).animate({color: "#ff1500"}, 150);
     }, function(){
         $(this).animate({color: "#424242"});
@@ -79,6 +95,9 @@ $(document).ready(function() {
     // parsing button clicks
     $("#csvParser").click(function(){
         sendShotstoPremiere($("#csvParser").text());
+    });
+    $("#creditsParser").click(function(){
+        sendCreditstoPremiere($("#creditsParser").text());
     });
 
     $("#scriptPreviewButton").click(function(){
@@ -185,11 +204,20 @@ $(document).ready(function() {
             e.stopPropagation();
         }, 
         'drop': function(e) {
-            var csvContents = extractFileData(e);
+            var csvContents = extractFileData(e, 'csv');
+        }
+    });
+    $('#creditsHolder').on({
+        'dragover': function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }, 
+        'drop': function(e) {
+            var creditsContents = extractFileData(e, 'credits');
         }
     });
 
-    function extractFileData(e){
+    function extractFileData(e, csvOrCredits){
         var dataTransfer =  e.originalEvent.dataTransfer;
         if( dataTransfer && dataTransfer.files.length) {
             e.preventDefault();
@@ -202,14 +230,20 @@ $(document).ready(function() {
                     // code from sheetJS documentation
                     var data = new Uint8Array(reader.result);
                     var workbook = XLSX.read(data, {type: 'array', cellStyles: true});
-                    window.xlSheetData.xlsheet = workbook;
-                    $("#csvFileList").css("display", "inline");
-                    $("#csvFileList").append("<li>" + file.name + "</li>")
+                    // add workbook to appropriate object
+                    if (csvOrCredits == 'csv')
+                        window.xlSheetData.xlsheet = workbook;
+                    else
+                        window.xlSheetData.creditsSheet = workbook;
+
+                    $("#" + csvOrCredits + "FileList").css("display", "inline");
+                    $("#" + csvOrCredits + "FileList").append("<li>" + file.name + "</li>")
                 }
                 reader.readAsArrayBuffer(file);
-                $("#csvFileUploaderReset").css("display", "inline");
-                $("#csvDragBoxText").css("display", "none");
-                $("#scriptPreviewButtonHolder").css("display", "block");
+                $("#" + csvOrCredits + "FileUploaderReset").css("display", "inline");
+                $("#" + csvOrCredits + "DragBoxText").css("display", "none");
+                if (csvOrCredits == 'csv')
+                    $("#scriptPreviewButtonHolder").css("display", "block");
             }
             else {
                 var cs = new CSInterface;	
@@ -310,6 +344,35 @@ $(document).ready(function() {
                 currentlyBold = true; //next word is bold
         }
         return boldIndexes;
+    }
+
+
+    function sendCreditstoPremiere(creditsInput){
+        if (window.xlSheetData.creditsSheet){
+            var workbook = window.xlSheetData.creditsSheet;
+            var firstSheetName = workbook.SheetNames[0];
+            var worksheet = workbook.Sheets[firstSheetName];
+            var sheetJSON = XLSX.utils.sheet_to_json(worksheet);
+
+            var headerArray = [];
+            var valueArray = [];
+            for (row in sheetJSON){
+                if (typeof sheetJSON[row].HEADER == 'string'){
+                    headerArray.push(sheetJSON[row].HEADER.trim());
+                    if (typeof sheetJSON[row].VALUE == 'string') // only add the trimmed value if there's an entry for it
+                        valueArray.push(sheetJSON[row].VALUE.trim());
+                    else
+                        valueArray.push(''); //otherwise, value becomes empty string
+                }
+            }
+
+            if (headerArray.length == valueArray.length){ //every header must have exactly one value
+                var cs = new CSInterface;	
+                cs.evalScript('$.runScript.insertCreditsFromXLSX(' + JSON.stringify(headerArray)+ ', ' + JSON.stringify(valueArray) + ')');    
+            }
+            else
+                alert("Couldn't parse credits file. Contact @atraviezo.")
+        }
     }
 
     function sendShotstoPremiere(csvInput){
